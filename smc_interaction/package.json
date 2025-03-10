@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@mysten/bcs": "^1.2.0",
+    "@mysten/sui": "^1.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  }
+}
