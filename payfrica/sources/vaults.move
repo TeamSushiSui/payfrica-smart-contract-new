@@ -4,7 +4,7 @@ module payfrica::vault{
         balance::{Self, Balance},
         clock::{Self, Clock}
     };
-
+    
     use std::type_name;
 
     use payfrica::{
@@ -84,7 +84,7 @@ module payfrica::vault_ticket{
     };
 
 
-    public struct ValutTicket has key, store {
+    public struct ValutTicket has key{
         id: UID,            
         amount_locked: u64,
         pool_id: ID,

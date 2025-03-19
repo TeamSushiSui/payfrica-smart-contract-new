@@ -21,6 +21,7 @@ public struct Valuts<phantom T> has key{
     valuts: Balance<T>,
     owner: address,
     lock_time: u64,
+    voter: Table<address, vector<u8>>,
 }
 
 public fun new_savings<T>(pool: &mut Pool,ctx: &mut TxContext){

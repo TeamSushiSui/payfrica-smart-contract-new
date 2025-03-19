@@ -5,6 +5,8 @@ import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { fromB64 } from "@mysten/sui/utils";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 
+// const image : String = "https:://" + "payafrica.io" + "/logo.png";
+
 export class PayAfrica {
     private client: SuiClient;
     private keypair: Ed25519Keypair;
