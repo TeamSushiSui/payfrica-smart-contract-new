@@ -4,8 +4,8 @@ module payfrica::pool{
         coin::{Self, Coin,},
         table::{Self,Table, new},
         bag::{Self, Bag},
-        dynamic_field as df,
-        event
+        event,
+        package::{Self, Publisher}
     };
     use std::{
         // string::String,
@@ -70,7 +70,7 @@ module payfrica::pool{
     }
 
     public fun new_pool<T0, T1>(ctx: &mut TxContext){
-        let mut pool = Pool{
+        let pool = Pool{
             id: object::new(ctx),
             coin_a: balance::zero<T0>(),
             coin_b: balance::zero<T1>(),
@@ -83,12 +83,13 @@ module payfrica::pool{
         };
 
         let pool_id =  pool.id.as_inner();
-        transfer::public_share_object(pool);
         event::emit(PoolCreated{ 
             pool_id: *pool_id,
             coin_a_type: type_name::get<T0>(),
             coin_b_type: type_name::get<T1>(),
-        }); 
+        });
+        transfer::public_share_object(pool);
+        
     }
 
     public fun add_liquidity_a<T0, T1>(pool: &mut Pool<T0, T1>, payfrica_pool: &mut PayfricaPool, liquidity_coin: Coin<T0>,ctx: &mut TxContext){
@@ -97,8 +98,8 @@ module payfrica::pool{
         assert!(amount != 0, 0);
         spilt_rewards_a(pool, payfrica_pool, ctx);
         if (pool.coin_a_liquidity_providers.contains(sender)){
-            let current_amount = pool.coin_a_liquidity_providers.borrow_mut(sender).amount;
-            current_amount = current_amount + amount;
+            let provider = pool.coin_a_liquidity_providers.borrow_mut(sender);
+            provider.amount = provider.amount + amount;
         } else{
             let providers = Providers<T0>{
                 amount,
@@ -123,8 +124,8 @@ module payfrica::pool{
         assert!(amount != 0, 0);
         spilt_rewards_b(pool, payfrica_pool, ctx);
         if (pool.coin_b_liquidity_providers.contains(sender)){
-            let current_amount = pool.coin_b_liquidity_providers.borrow_mut(sender).amount;
-            current_amount = current_amount + amount;
+            let provider = pool.coin_b_liquidity_providers.borrow_mut(sender);
+            provider.amount = provider.amount + amount;
         } else{
             let providers = Providers<T1>{
                 amount,
@@ -147,8 +148,9 @@ module payfrica::pool{
         let sender = ctx.sender();
         assert!(pool.coin_a_liquidity_providers.contains(sender), 0);
         let liquidity_provider = pool.coin_a_liquidity_providers.borrow_mut(sender);
-        assert!(amount <= liquidity_provider.amount, 0);
-        if (amount == liquidity_provider.amount){
+        let mut liquidity_amount = liquidity_provider.amount;
+        assert!(amount <= liquidity_amount, 0);
+        if (amount == liquidity_amount){
             let liquidity_coin = coin::take(&mut pool.coin_a, amount, ctx);
             claim_rewards_a(pool, ctx);
             remove_address_from_list(pool.coin_a_liquidity_providers_list, sender);
@@ -158,8 +160,9 @@ module payfrica::pool{
             transfer::public_transfer(liquidity_coin, sender);
         } else {
             let liquidity_coin = coin::take(&mut pool.coin_a, amount, ctx);
+            liquidity_amount = liquidity_amount - amount;
+            liquidity_provider.amount = liquidity_amount;
             claim_rewards_a(pool, ctx);
-            liquidity_provider.amount = liquidity_provider.amount - amount;
             transfer::public_transfer(liquidity_coin, sender);
         };
         event::emit(PoolLiquidityInteraction{
@@ -175,8 +178,9 @@ module payfrica::pool{
         let sender = ctx.sender();
         assert!(pool.coin_b_liquidity_providers.contains(sender), 0);
         let liquidity_provider = pool.coin_b_liquidity_providers.borrow_mut(sender);
-        assert!(amount <= liquidity_provider.amount, 0);
-        if (amount == liquidity_provider.amount){
+        let mut liquidity_amount = liquidity_provider.amount;
+        assert!(amount <= liquidity_amount, 0);
+        if (amount == liquidity_amount){
             let liquidity_coin = coin::take(&mut pool.coin_b, amount, ctx);
             claim_rewards_b(pool, ctx);
             remove_address_from_list(pool.coin_b_liquidity_providers_list, sender);
@@ -186,8 +190,9 @@ module payfrica::pool{
             transfer::public_transfer(liquidity_coin, sender);
         } else {
             let liquidity_coin = coin::take(&mut pool.coin_b, amount, ctx);
+            liquidity_amount = liquidity_amount - amount;
+            liquidity_provider.amount = liquidity_amount;
             claim_rewards_b(pool, ctx);
-            liquidity_provider.amount = liquidity_provider.amount - amount;
             transfer::public_transfer(liquidity_coin, sender);
         };
         event::emit(PoolLiquidityInteraction{
@@ -201,10 +206,11 @@ module payfrica::pool{
     #[allow(lint(self_transfer))]
     public fun convert_a_to_b<T0, T1>(pool: &mut Pool<T0, T1>, conversion_coin: Coin<T0>, conversio_rate : u64, coin_a_decimals: u8, coin_b_decimals: u8, ctx: &mut TxContext){
         let sender = ctx.sender();
-        assert!(conversion_coin.value() > 0, 0);
+        let coin_value = conversion_coin.value();
+        assert!(coin_value > 0, 0);
         let coin_a_scale_factor = 10u64.pow(coin_a_decimals);
         let coin_b_scale_factor = 10u64.pow(coin_b_decimals);
-        let amount = (conversion_coin.value() * coin_b_scale_factor) / (conversio_rate * coin_a_scale_factor);
+        let amount = (coin_value * coin_b_scale_factor) / (conversio_rate * coin_a_scale_factor);
         let coin_balance : Balance<T0> = conversion_coin.into_balance();
         assert!(amount <= pool.coin_b.value(), 0);
         balance::join(&mut pool.coin_a, coin_balance);
@@ -215,7 +221,7 @@ module payfrica::pool{
             conversio_rate,
             input_coin_type: type_name::get<T0>(),
             output_coin_type: type_name::get<T1>(),
-            input_coin_amount: conversion_coin.value(),
+            input_coin_amount: coin_value,
             output_coin_amount: amount,
         });
     }
@@ -223,10 +229,11 @@ module payfrica::pool{
     #[allow(lint(self_transfer))]
     public fun convert_b_to_a<T0, T1>(pool: &mut Pool<T0, T1>, conversion_coin: Coin<T1>, conversio_rate : u64, coin_a_decimals: u8, coin_b_decimals: u8, ctx: &mut TxContext){
         let sender = ctx.sender();
-        assert!(conversion_coin.value() > 0, 0);
+        let coin_value = conversion_coin.value();
+        assert!(coin_value > 0, 0);
         let coin_a_scale_factor = 10u64.pow(coin_a_decimals);
         let coin_b_scale_factor = 10u64.pow(coin_b_decimals);
-        let amount = ((conversion_coin.value() * conversio_rate) / coin_b_scale_factor) * coin_a_scale_factor;
+        let amount = ((coin_value * conversio_rate) / coin_b_scale_factor) * coin_a_scale_factor;
         let coin_balance : Balance<T1> = conversion_coin.into_balance();
         assert!(amount <= pool.coin_a.value(), 0);
         balance::join(&mut pool.coin_b, coin_balance);
@@ -237,7 +244,7 @@ module payfrica::pool{
             conversio_rate,
             input_coin_type: type_name::get<T1>(),
             output_coin_type: type_name::get<T0>(),
-            input_coin_amount: conversion_coin.value(),
+            input_coin_amount: coin_value,
             output_coin_amount: amount,
         });
     }
@@ -321,11 +328,13 @@ module payfrica::pool{
         return 0
     }
 
+    #[allow(lint(self_transfer))]
     public fun claim_rewards_a<T0, T1>(pool: &mut Pool<T0, T1>,ctx: &mut TxContext){
         let reward = pool.coin_a_liquidity_providers.borrow_mut(ctx.sender()).rewards.withdraw_all();
         transfer::public_transfer(reward.into_coin(ctx), ctx.sender());
     }
 
+    #[allow(lint(self_transfer))]
     public fun claim_rewards_b<T0, T1>(pool: &mut Pool<T0, T1>,ctx: &mut TxContext){
         let reward = pool.coin_b_liquidity_providers.borrow_mut(ctx.sender()).rewards.withdraw_all();
         transfer::public_transfer(reward.into_coin(ctx), ctx.sender());
@@ -335,14 +344,21 @@ module payfrica::pool{
         *pool.id.as_inner()
     }
 
-    fun remove_address_from_list(list: vector<address>, addr: address){
+    fun remove_address_from_list(mut list: vector<address>, addr: address){
         let mut i = 0;
         while(i < list.length()){
             if (list.borrow(i) == addr){
                 list.remove(i);
                 break
-            }
+            };
+            i = i + 1;
         }
+    }
+
+    #[test_only]
+    public fun call_init(ctx: &mut TxContext){
+        let otw = POOL{};
+        init(otw, ctx);
     }
 }
 
@@ -366,6 +382,4 @@ module payfrica::pool_tickets{
         time: u64,
         owner: address,
     }
-
-    
 }

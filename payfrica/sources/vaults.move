@@ -8,7 +8,7 @@ module payfrica::vault{
     use std::type_name;
 
     use payfrica::{
-        pool::{Self, Pool},
+        pool::{Self, Pool, PayfricaPool},
         vault_ticket::{Self, ValutTicket},
         ngnc::NGNC,
     };
@@ -20,7 +20,8 @@ module payfrica::vault{
     const EInvalidCoinValue: u64 = 4;
 
     public entry fun create_vault_a<NGNC, T1>(
-        pool: &mut Pool<NGNC,T1>, 
+        pool: &mut Pool<NGNC,T1>,
+        payfrica_pool: &mut PayfricaPool,
         lockup_coin: Coin<NGNC>, 
         unlock_time: u64, 
         clock: &Clock, 
@@ -28,13 +29,13 @@ module payfrica::vault{
     ){  
         assert!(lockup_coin.value() > 0, EInvalidCoinValue);
         assert!(unlock_time > clock.timestamp_ms(), EInvalidUnlockTime);
-        pool::add_liquidity_a(pool, lockup_coin, ctx);
         vault_ticket::get_ticket(pool.get_pool_id(), lockup_coin.value(), clock.timestamp_ms(), unlock_time, type_name::get<NGNC>(), ctx);
-
+        pool::add_liquidity_a(pool, payfrica_pool, lockup_coin, ctx);
     }
 
     public entry fun create_vault_b<NGNC, T1>(
         pool: &mut Pool<NGNC,T1>, 
+        payfrica_pool: &mut PayfricaPool,
         lockup_coin: Coin<T1>, 
         unlock_time: u64, 
         clock: &Clock, 
@@ -42,8 +43,8 @@ module payfrica::vault{
     ){  
         assert!(lockup_coin.value() > 0, EInvalidCoinValue);
         assert!(unlock_time > clock.timestamp_ms(), EInvalidUnlockTime);
-        pool::add_liquidity_b(pool, lockup_coin, ctx);
         vault_ticket::get_ticket(pool.get_pool_id(), lockup_coin.value(), clock.timestamp_ms(), unlock_time, type_name::get<T1>(), ctx);
+        pool::add_liquidity_b(pool, payfrica_pool, lockup_coin, ctx);     
     }
 
     public entry fun unlock_vault_a<NGNC, T1>(
