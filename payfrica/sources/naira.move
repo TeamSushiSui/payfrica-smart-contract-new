@@ -1,7 +1,6 @@
 module payfrica::ngnc;
 use sui::coin::{Self, Coin, TreasuryCap};
 use sui::url::{Self, Url};
-use std::debug;
 
 public struct NGNC has drop{}
 
@@ -15,7 +14,6 @@ fun init(witness: NGNC, ctx: &mut TxContext) {
         option::some<Url>(url::new_unsafe_from_bytes(b"https://i.ibb.co/1LZXjZW/e-naira-logo.png")), 
         ctx);
     transfer::public_freeze_object(metadata);
-    // debug::print(&treasury);
     transfer::public_transfer(treasury, ctx.sender())
 }
 

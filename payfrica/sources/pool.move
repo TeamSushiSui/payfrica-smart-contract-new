@@ -18,6 +18,15 @@ module payfrica::pool{
         rewards: Bag,
     }
 
+    const ENotAuthorized : u64 = 0;
+    const ESameSwapFee: u64 = 1;
+    const EInvalidCoinValue: u64 = 2;
+    const ENotALiquidityProvider: u64 = 3;
+    const ENotEnoughLiquidity: u64 = 4;
+    const ENotEnoughLiquidityOnPool: u64 = 5;
+    const EFeeScenerioDoesNotExist: u64 = 6;
+
+
     public struct POOL has drop {}
 
     public struct Pool<phantom T0, phantom T1> has store, key{
@@ -30,6 +39,10 @@ module payfrica::pool{
         coin_b_liquidity_providers: Table<address, Providers<T1>>,
         coin_a_liquidity_providers_list: vector<address>,
         coin_b_liquidity_providers_list: vector<address>,
+        swap_fees_a: Table<u64, Fee>,
+        swap_fees_b: Table<u64, Fee>,
+        defualt_fees_a: Option<u64>, //Percentage 1% --> 100
+        defualt_fees_b: Option<u64>, //Percentage 
     }
 
     public struct Providers<phantom T> has store{
@@ -37,39 +50,92 @@ module payfrica::pool{
         rewards: Balance<T>,
     }
 
-    public struct PoolCreated has copy, drop{
+    public struct Fee has store, drop{
+        threshold: u64,
+        fee: u64,
+    }
+
+    public struct PoolCreatedEvent has copy, drop{
         pool_id: ID,
         coin_a_type: TypeName,
         coin_b_type: TypeName,
     }
 
-    public struct SwapCreated has copy, drop{
+    public struct SwapCreatedEvent has copy, drop{
         pool_id: ID,
         conversio_rate: u64,
         input_coin_type: TypeName,
         output_coin_type: TypeName,
         input_coin_amount: u64,
         output_coin_amount: u64,
+        coin_a_balance: u64,
+        coin_b_balance: u64,
     }
 
-    public struct PoolLiquidityInteraction has copy, drop{
+    public struct AddedToLiquidityPoolEvent has copy, drop{
         pool_id: ID,
         coin_type: TypeName,
         amount: u64,
-        add_liquidty: bool,
+        coin_a_balance: u64,
+        coin_b_balance: u64,
+    }
+
+    public struct RemovedFromLiquidityPoolEvent has copy, drop{
+        pool_id: ID,
+        coin_type: TypeName,
+        amount: u64,
+        coin_a_balance: u64,
+        coin_b_balance: u64,
+    }
+
+    public struct PoolDefualtFeesUpdatedEvent has copy, drop{
+        pool_id: ID,
+        coin_type_a: TypeName,
+        coin_type_b: TypeName,
+        defualt_fees_a: u64,
+        defualt_fees_b: u64,
+    }
+
+    public struct PoolSwapFeesScenerioAddedEvent has copy, drop{
+        pool_id: ID,
+        coin_type: TypeName,
+        threshold: u64,
+        fee: u64,
+    }
+
+    public struct PoolSwapFeesScenerioRemovedEvent has copy, drop{
+        pool_id: ID,
+        coin_type: TypeName,
+        threshold: u64,
+    }
+
+    public struct PoolSwapFeesScenerioUpdatedEvent has copy, drop{
+        pool_id: ID,
+        coin_type: TypeName,
+        threshold: u64,
+        old_fee: u64,
+        new_fee: u64,
+    }
+
+    public struct PoolRewardClaimEvent has copy, drop{
+        pool_id: ID,
+        coin_type: TypeName,
+        amount: u64,
     }
 
     fun init(otw: POOL,ctx: &mut TxContext){
+        let publisher : Publisher = package::claim(otw, ctx);
         let pool: PayfricaPool = PayfricaPool{
             id: object::new(ctx),
             tokens: vector::empty<TypeName>(),
             rewards: bag::new(ctx),
         };
-
+        transfer::public_transfer(publisher, ctx.sender());
         transfer::share_object(pool);
     }
-
-    public fun new_pool<T0, T1>(ctx: &mut TxContext){
+    
+    public fun new_pool<T0, T1>(cap : &Publisher,ctx: &mut TxContext){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
         let pool = Pool{
             id: object::new(ctx),
             coin_a: balance::zero<T0>(),
@@ -80,22 +146,129 @@ module payfrica::pool{
             coin_b_liquidity_providers: new<address, Providers<T1>>(ctx),
             coin_a_liquidity_providers_list: vector::empty<address>(),
             coin_b_liquidity_providers_list: vector::empty<address>(),
+            swap_fees_a: new<u64, Fee>(ctx),
+            swap_fees_b: new<u64, Fee>(ctx),
+            defualt_fees_a: option::none(),
+            defualt_fees_b: option::none(),
         };
 
         let pool_id =  pool.id.as_inner();
-        event::emit(PoolCreated{ 
+        event::emit(PoolCreatedEvent{ 
             pool_id: *pool_id,
             coin_a_type: type_name::get<T0>(),
             coin_b_type: type_name::get<T1>(),
         });
         transfer::public_share_object(pool);
-        
     }
 
-    public fun add_liquidity_a<T0, T1>(pool: &mut Pool<T0, T1>, payfrica_pool: &mut PayfricaPool, liquidity_coin: Coin<T0>,ctx: &mut TxContext){
+    public fun set_default_fees<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, defualt_fees_a: u64, defualt_fees_b: u64){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
+        pool.defualt_fees_a = option::some(defualt_fees_a);
+        pool.defualt_fees_b = option::some(defualt_fees_b);
+
+        event::emit(
+            PoolDefualtFeesUpdatedEvent{
+                pool_id: *pool.id.as_inner(),
+                coin_type_a: type_name::get<T0>(),
+                coin_type_b: type_name::get<T1>(),
+                defualt_fees_a,
+                defualt_fees_b,
+            }
+        );
+    }
+
+    public fun add_swap_fees_scenario_a<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, threshold: u64, fee: u64){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
+        let i = pool.swap_fees_a.length();
+        pool.swap_fees_a.add(i, Fee{threshold, fee});
+        event::emit(
+            PoolSwapFeesScenerioAddedEvent{
+                pool_id: *pool.id.as_inner(),
+                coin_type: type_name::get<T0>(),
+                threshold,
+                fee,
+            }
+        );
+    }
+
+    public fun add_swap_fees_scenario_b<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, threshold: u64, fee: u64){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
+        let i = pool.swap_fees_b.length();
+        pool.swap_fees_b.add(i, Fee{threshold, fee});
+        event::emit(
+            PoolSwapFeesScenerioAddedEvent{
+                pool_id: *pool.id.as_inner(),
+                coin_type: type_name::get<T1>(),
+                threshold,
+                fee,
+            }
+        );
+    }
+
+    public fun remove_swap_fees_scenario_a<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, threshold: u64){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
+        let i = get_fees_index(&pool.swap_fees_a, threshold);
+        pool.swap_fees_a.remove(i);
+        event::emit(
+            PoolSwapFeesScenerioRemovedEvent{
+                pool_id: *pool.id.as_inner(),
+                coin_type: type_name::get<T0>(),
+                threshold,
+            }
+        );
+    }
+
+    public fun remove_swap_fees_scenario_b<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, threshold: u64){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
+        let i = get_fees_index(&pool.swap_fees_a, threshold);
+        pool.swap_fees_a.remove(i);
+        event::emit(
+            PoolSwapFeesScenerioRemovedEvent{
+                pool_id: *pool.id.as_inner(),
+                coin_type: type_name::get<T1>(),
+                threshold,
+            }
+        );
+    }
+
+    public fun update_swap_fees_scenario_a<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, threshold: u64, fee: u64){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
+        let i = get_fees_index(&pool.swap_fees_a, threshold);
+        assert!(pool.swap_fees_a.borrow(i).fee != fee, ESameSwapFee);
+        let old_fee = pool.swap_fees_a.borrow(i).fee;
+        pool.swap_fees_a.borrow_mut(i).fee = fee;
+        event::emit(
+            PoolSwapFeesScenerioUpdatedEvent{
+                pool_id: *pool.id.as_inner(),
+                coin_type: type_name::get<T0>(),
+                threshold,
+                old_fee,
+                new_fee: fee,
+            }
+        );
+    }
+
+    public fun update_swap_fees_scenario_b<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, threshold: u64, fee: u64){
+        assert!(cap.from_module<PayfricaPool>(), ENotAuthorized);
+        let i = get_fees_index(&pool.swap_fees_b, threshold);
+        assert!(pool.swap_fees_b.borrow(i).fee != fee, ESameSwapFee);
+        let old_fee = pool.swap_fees_a.borrow(i).fee;
+        pool.swap_fees_b.borrow_mut(i).fee = fee;
+        event::emit(
+            PoolSwapFeesScenerioUpdatedEvent{
+                pool_id: *pool.id.as_inner(),
+                coin_type: type_name::get<T1>(),
+                threshold,
+                old_fee,
+                new_fee: fee,
+            }
+        );
+    }
+
+    public fun add_liquidity_a<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, payfrica_pool: &mut PayfricaPool, liquidity_coin: Coin<T0>,ctx: &mut TxContext){
         let sender = ctx.sender();
         let amount = liquidity_coin.value();
-        assert!(amount != 0, 0);
+        assert!(EInvalidCoinValue != 0, 0);
         spilt_rewards_a(pool, payfrica_pool, ctx);
         if (pool.coin_a_liquidity_providers.contains(sender)){
             let provider = pool.coin_a_liquidity_providers.borrow_mut(sender);
@@ -110,18 +283,19 @@ module payfrica::pool{
         let coin_balance : Balance<T0> = liquidity_coin.into_balance();
         balance::join(&mut pool.coin_a, coin_balance);
 
-        event::emit(PoolLiquidityInteraction{
+        event::emit(AddedToLiquidityPoolEvent{
             pool_id: *pool.id.as_inner(),
             coin_type: type_name::get<T0>(),
             amount,
-            add_liquidty: true,
+            coin_a_balance: pool.coin_a.value(),
+            coin_b_balance: pool.coin_b.value(),
         });
     }
 
     public fun add_liquidity_b<T0, T1>(pool: &mut Pool<T0, T1>, payfrica_pool: &mut PayfricaPool, liquidity_coin: Coin<T1>,ctx: &mut TxContext){
         let sender = ctx.sender();
         let amount = liquidity_coin.value();
-        assert!(amount != 0, 0);
+        assert!(amount != 0, EInvalidCoinValue);
         spilt_rewards_b(pool, payfrica_pool, ctx);
         if (pool.coin_b_liquidity_providers.contains(sender)){
             let provider = pool.coin_b_liquidity_providers.borrow_mut(sender);
@@ -135,21 +309,22 @@ module payfrica::pool{
         };
         let coin_balance : Balance<T1> = liquidity_coin.into_balance();
         balance::join(&mut pool.coin_b, coin_balance);
-        event::emit(PoolLiquidityInteraction{
+        event::emit(AddedToLiquidityPoolEvent{
             pool_id: *pool.id.as_inner(),
             coin_type: type_name::get<T1>(),
             amount,
-            add_liquidty: true,
+            coin_a_balance: pool.coin_a.value(),
+            coin_b_balance: pool.coin_b.value(),
         });
     }
 
     #[allow(lint(self_transfer))]
     public fun remove_liquidity_a<T0, T1>(pool: &mut Pool<T0, T1>, amount: u64,ctx: &mut TxContext){
         let sender = ctx.sender();
-        assert!(pool.coin_a_liquidity_providers.contains(sender), 0);
+        assert!(pool.coin_a_liquidity_providers.contains(sender), ENotALiquidityProvider);
         let liquidity_provider = pool.coin_a_liquidity_providers.borrow_mut(sender);
         let mut liquidity_amount = liquidity_provider.amount;
-        assert!(amount <= liquidity_amount, 0);
+        assert!(amount <= liquidity_amount, ENotEnoughLiquidity);
         if (amount == liquidity_amount){
             let liquidity_coin = coin::take(&mut pool.coin_a, amount, ctx);
             claim_rewards_a(pool, ctx);
@@ -165,21 +340,22 @@ module payfrica::pool{
             claim_rewards_a(pool, ctx);
             transfer::public_transfer(liquidity_coin, sender);
         };
-        event::emit(PoolLiquidityInteraction{
+        event::emit(RemovedFromLiquidityPoolEvent{
             pool_id: *pool.id.as_inner(),
             coin_type: type_name::get<T0>(),
             amount,
-            add_liquidty: false,
+            coin_a_balance: pool.coin_a.value(),
+            coin_b_balance: pool.coin_b.value(),
         });
     }
 
     #[allow(lint(self_transfer))]
     public fun remove_liquidity_b<T0, T1>(pool: &mut Pool<T0, T1>, amount: u64,ctx: &mut TxContext){
         let sender = ctx.sender();
-        assert!(pool.coin_b_liquidity_providers.contains(sender), 0);
+        assert!(pool.coin_b_liquidity_providers.contains(sender), ENotALiquidityProvider);
         let liquidity_provider = pool.coin_b_liquidity_providers.borrow_mut(sender);
         let mut liquidity_amount = liquidity_provider.amount;
-        assert!(amount <= liquidity_amount, 0);
+        assert!(amount <= liquidity_amount, ENotEnoughLiquidity);
         if (amount == liquidity_amount){
             let liquidity_coin = coin::take(&mut pool.coin_b, amount, ctx);
             claim_rewards_b(pool, ctx);
@@ -195,11 +371,12 @@ module payfrica::pool{
             claim_rewards_b(pool, ctx);
             transfer::public_transfer(liquidity_coin, sender);
         };
-        event::emit(PoolLiquidityInteraction{
+        event::emit(RemovedFromLiquidityPoolEvent{
             pool_id: *pool.id.as_inner(),
             coin_type: type_name::get<T0>(),
             amount,
-            add_liquidty: false,
+            coin_a_balance: pool.coin_a.value(),
+            coin_b_balance: pool.coin_b.value(),
         });
     }
 
@@ -207,22 +384,34 @@ module payfrica::pool{
     public fun convert_a_to_b<T0, T1>(pool: &mut Pool<T0, T1>, conversion_coin: Coin<T0>, conversio_rate : u64, coin_a_decimals: u8, coin_b_decimals: u8, ctx: &mut TxContext){
         let sender = ctx.sender();
         let coin_value = conversion_coin.value();
-        assert!(coin_value > 0, 0);
+        assert!(coin_value > 0, EInvalidCoinValue);
         let coin_a_scale_factor = 10u64.pow(coin_a_decimals);
         let coin_b_scale_factor = 10u64.pow(coin_b_decimals);
-        let amount = (coin_value * coin_b_scale_factor) / (conversio_rate * coin_a_scale_factor);
-        let coin_balance : Balance<T0> = conversion_coin.into_balance();
-        assert!(amount <= pool.coin_b.value(), 0);
+
+        let fee = (coin_value * get_fees_a(pool, coin_value)) / 10_000;
+        let net_coin_value = coin_value - fee;
+
+        let amount = (net_coin_value * coin_b_scale_factor) / (conversio_rate * coin_a_scale_factor);
+        assert!(amount <= pool.coin_b.value(), ENotEnoughLiquidityOnPool);
+
+        let mut coin_balance  : Balance<T0> = conversion_coin.into_balance();
+        let fee_coin = coin::take(&mut coin_balance, fee, ctx);
+
+        balance::join(&mut pool.coin_a_rewards, fee_coin.into_balance());
+
         balance::join(&mut pool.coin_a, coin_balance);
+
         let b_coin = coin::take(&mut pool.coin_b, amount, ctx);
         transfer::public_transfer(b_coin, sender);
-        event::emit(SwapCreated{
+        event::emit(SwapCreatedEvent{
             pool_id: *pool.id.as_inner(),
             conversio_rate,
             input_coin_type: type_name::get<T0>(),
             output_coin_type: type_name::get<T1>(),
             input_coin_amount: coin_value,
             output_coin_amount: amount,
+            coin_a_balance: pool.coin_a.value(),
+            coin_b_balance: pool.coin_b.value(),
         });
     }
 
@@ -230,23 +419,44 @@ module payfrica::pool{
     public fun convert_b_to_a<T0, T1>(pool: &mut Pool<T0, T1>, conversion_coin: Coin<T1>, conversio_rate : u64, coin_a_decimals: u8, coin_b_decimals: u8, ctx: &mut TxContext){
         let sender = ctx.sender();
         let coin_value = conversion_coin.value();
-        assert!(coin_value > 0, 0);
+        assert!(coin_value > 0, EInvalidCoinValue);
         let coin_a_scale_factor = 10u64.pow(coin_a_decimals);
         let coin_b_scale_factor = 10u64.pow(coin_b_decimals);
+
+        let fee = (coin_value * get_fees_b(pool, coin_value)) / 10_000;
+        let net_coin_value = coin_value - fee;
+
         let amount = ((coin_value * conversio_rate) / coin_b_scale_factor) * coin_a_scale_factor;
-        let coin_balance : Balance<T1> = conversion_coin.into_balance();
-        assert!(amount <= pool.coin_a.value(), 0);
+        assert!(amount <= pool.coin_a.value(), ENotEnoughLiquidityOnPool);
+
+        let mut coin_balance : Balance<T1> = conversion_coin.into_balance();
+        let fee_coin = coin::take(&mut coin_balance, fee, ctx);
+
+        balance::join(&mut pool.coin_b_rewards, fee_coin.into_balance());
+        
         balance::join(&mut pool.coin_b, coin_balance);
         let a_coin = coin::take(&mut pool.coin_a, amount, ctx);
         transfer::public_transfer(a_coin, sender);
-        event::emit(SwapCreated{
+        event::emit(SwapCreatedEvent{
             pool_id: *pool.id.as_inner(),
             conversio_rate,
             input_coin_type: type_name::get<T1>(),
             output_coin_type: type_name::get<T0>(),
             input_coin_amount: coin_value,
             output_coin_amount: amount,
+            coin_a_balance: pool.coin_a.value(),
+            coin_b_balance: pool.coin_b.value(),
         });
+    }
+
+    public fun get_fess_convert_a_to_b<T0, T1>(pool: &Pool<T0, T1>, coin_value: u64) : u64{
+        let fee = (coin_value * get_fees_a(pool, coin_value)) / 10_000;
+        fee
+    }
+
+    public fun get_fess_convert_b_to_a<T0, T1>(pool: &Pool<T0, T1>, coin_value: u64) : u64{
+        let fee = (coin_value * get_fees_b(pool, coin_value)) / 10_000;
+        fee
     }
 
     fun spilt_rewards_a<T0, T1>(pool: &mut Pool<T0, T1>, payfrica_pool: &mut PayfricaPool, ctx: &mut TxContext){
@@ -328,16 +538,68 @@ module payfrica::pool{
         return 0
     }
 
+    fun get_fees_a<T0, T1>(pool: &Pool<T0, T1>, amount: u64) : u64{
+        let mut i = 0;
+        let mut fees = 0;
+        if (pool.defualt_fees_a.is_some()){
+            fees = *pool.defualt_fees_a.borrow();
+        };
+        while(i < pool.swap_fees_a.length()){
+            if (amount > pool.swap_fees_a.borrow(i).threshold){
+                let fee = pool.swap_fees_a.borrow(i).fee;
+                break
+            };
+            i = i + 1;
+        };
+        fees
+    }
+
+    fun get_fees_b<T0, T1>(pool: &Pool<T0, T1>, amount: u64) : u64{
+        let mut i = 0;
+        let mut fees = 0;
+        if (pool.defualt_fees_b.is_some()){
+            fees = *pool.defualt_fees_b.borrow();
+        };
+        while(i < pool.swap_fees_b.length()){
+            if (amount > pool.swap_fees_b.borrow(i).threshold){
+                let fee = pool.swap_fees_b.borrow(i).fee;
+                break
+            };
+            i = i + 1;
+        };
+        fees
+    }
+
     #[allow(lint(self_transfer))]
     public fun claim_rewards_a<T0, T1>(pool: &mut Pool<T0, T1>,ctx: &mut TxContext){
         let reward = pool.coin_a_liquidity_providers.borrow_mut(ctx.sender()).rewards.withdraw_all();
+        let reward_value =  reward.value();
         transfer::public_transfer(reward.into_coin(ctx), ctx.sender());
+        event::emit(PoolRewardClaimEvent{
+            pool_id: *pool.id.as_inner(),
+            coin_type: type_name::get<T0>(),
+            amount: reward_value,
+        });
     }
 
     #[allow(lint(self_transfer))]
     public fun claim_rewards_b<T0, T1>(pool: &mut Pool<T0, T1>,ctx: &mut TxContext){
         let reward = pool.coin_b_liquidity_providers.borrow_mut(ctx.sender()).rewards.withdraw_all();
+        let reward_value =  reward.value();
         transfer::public_transfer(reward.into_coin(ctx), ctx.sender());
+        event::emit(PoolRewardClaimEvent{
+            pool_id: *pool.id.as_inner(),
+            coin_type: type_name::get<T1>(),
+            amount: reward_value,
+        });
+    }
+
+    public fun get_rewards_value_a<T0, T1>(pool: &Pool<T0, T1>, addr: address) : u64{
+        pool.coin_a_liquidity_providers.borrow(addr).rewards.value()
+    }
+
+    public fun get_rewards_value_b<T0, T1>(pool: &Pool<T0, T1>, addr: address) : u64{
+        pool.coin_b_liquidity_providers.borrow(addr).rewards.value()
     }
 
     public fun get_pool_id<T0, T1>(pool: &Pool<T0, T1>) :ID{
@@ -353,6 +615,19 @@ module payfrica::pool{
             };
             i = i + 1;
         }
+    }
+
+    fun get_fees_index(fees: &Table<u64, Fee>, threshold: u64) : u64{
+        let mut i = 0;
+        let mut index = 0;
+        while(i < fees.length()){
+            if (threshold == fees.borrow(i).threshold){
+                index = i;
+            };
+            i = i + 1;
+        };
+        assert(index != 0, EFeeScenerioDoesNotExist);
+        index
     }
 
     #[test_only]
