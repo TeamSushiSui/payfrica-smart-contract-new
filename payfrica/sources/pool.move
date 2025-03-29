@@ -2,7 +2,7 @@ module payfrica::pool{
     use sui::{
         balance::{Self, Balance},
         coin::{Self, Coin,},
-        table::{Self,Table, new},
+        table::{Table, new},
         bag::{Self, Bag},
         event,
         package::{Self, Publisher}
@@ -25,7 +25,6 @@ module payfrica::pool{
     const ENotEnoughLiquidity: u64 = 4;
     const ENotEnoughLiquidityOnPool: u64 = 5;
     const EFeeScenerioDoesNotExist: u64 = 6;
-
 
     public struct POOL has drop {}
 
@@ -265,7 +264,7 @@ module payfrica::pool{
         );
     }
 
-    public fun add_liquidity_a<T0, T1>(pool: &mut Pool<T0, T1>, cap : &Publisher, payfrica_pool: &mut PayfricaPool, liquidity_coin: Coin<T0>,ctx: &mut TxContext){
+    public fun add_liquidity_a<T0, T1>(pool: &mut Pool<T0, T1>, payfrica_pool: &mut PayfricaPool, liquidity_coin: Coin<T0>,ctx: &mut TxContext){
         let sender = ctx.sender();
         let amount = liquidity_coin.value();
         assert!(EInvalidCoinValue != 0, 0);
@@ -279,10 +278,10 @@ module payfrica::pool{
                 rewards: balance::zero<T0>()
             };
             pool.coin_a_liquidity_providers.add(sender, providers);
+            pool.coin_a_liquidity_providers_list.push_back(sender);
         };
         let coin_balance : Balance<T0> = liquidity_coin.into_balance();
         balance::join(&mut pool.coin_a, coin_balance);
-
         event::emit(AddedToLiquidityPoolEvent{
             pool_id: *pool.id.as_inner(),
             coin_type: type_name::get<T0>(),
@@ -306,6 +305,7 @@ module payfrica::pool{
                 rewards: balance::zero<T1>()
             };
             pool.coin_b_liquidity_providers.add(sender, providers);
+            pool.coin_b_liquidity_providers_list.push_back(sender);
         };
         let coin_balance : Balance<T1> = liquidity_coin.into_balance();
         balance::join(&mut pool.coin_b, coin_balance);
@@ -426,7 +426,7 @@ module payfrica::pool{
         let fee = (coin_value * get_fees_b(pool, coin_value)) / 10_000;
         let net_coin_value = coin_value - fee;
 
-        let amount = ((coin_value * conversio_rate) / coin_b_scale_factor) * coin_a_scale_factor;
+        let amount = ((net_coin_value * conversio_rate) / coin_b_scale_factor) * coin_a_scale_factor;
         assert!(amount <= pool.coin_a.value(), ENotEnoughLiquidityOnPool);
 
         let mut coin_balance : Balance<T1> = conversion_coin.into_balance();
@@ -460,7 +460,7 @@ module payfrica::pool{
     }
 
     fun spilt_rewards_a<T0, T1>(pool: &mut Pool<T0, T1>, payfrica_pool: &mut PayfricaPool, ctx: &mut TxContext){
-        if(pool.coin_a.value() > 1000000){
+        if(pool.coin_a_rewards.value() > 1000000){
             let type_name = type_name::get<T0>();
             let mut i = 0;
             let rewards_value = pool.coin_a_rewards.value();
@@ -491,10 +491,10 @@ module payfrica::pool{
         payfrica_pool: &mut PayfricaPool, 
         ctx: &mut TxContext
     ){
-        if(pool.coin_a.value() > 1000000){
+        if(pool.coin_b_rewards.value() > 1000000){
             let type_name = type_name::get<T1>();
             let mut i = 0;
-            let rewards_value = pool.coin_a_rewards.value();
+            let rewards_value = pool.coin_b_rewards.value();
             let payfrica_reward_value = rewards_value / 10;
             let general_reward_value = rewards_value - payfrica_reward_value;
             let payfrica_reward = coin::take(
@@ -546,7 +546,7 @@ module payfrica::pool{
         };
         while(i < pool.swap_fees_a.length()){
             if (amount > pool.swap_fees_a.borrow(i).threshold){
-                let fee = pool.swap_fees_a.borrow(i).fee;
+                fees = pool.swap_fees_a.borrow(i).fee;
                 break
             };
             i = i + 1;
@@ -562,7 +562,7 @@ module payfrica::pool{
         };
         while(i < pool.swap_fees_b.length()){
             if (amount > pool.swap_fees_b.borrow(i).threshold){
-                let fee = pool.swap_fees_b.borrow(i).fee;
+                fees = pool.swap_fees_b.borrow(i).fee;
                 break
             };
             i = i + 1;
@@ -626,7 +626,7 @@ module payfrica::pool{
             };
             i = i + 1;
         };
-        assert(index != 0, EFeeScenerioDoesNotExist);
+        assert!(index != 0, EFeeScenerioDoesNotExist);
         index
     }
 
@@ -637,24 +637,24 @@ module payfrica::pool{
     }
 }
 
-module payfrica::pool_tickets{
-    use std::{
-        string::{Self, String},
-        type_name::TypeName,
-    };
+// module payfrica::pool_tickets{
+//     use std::{
+//         string::{Self, String},
+//         type_name::TypeName,
+//     };
 
-    use sui::{
-        url::{Self, Url},
-        clock::{Clock},
-        event,
-    };
+//     use sui::{
+//         url::{Self, Url},
+//         clock::{Clock},
+//         event,
+//     };
 
-    public struct PayfricaPoolTicket has key{
-        id: UID,
-        pool_id: ID,
-        coin_type: TypeName,
-        amount_added: u64,
-        time: u64,
-        owner: address,
-    }
-}
+//     public struct PayfricaPoolTicket has key{
+//         id: UID,
+//         pool_id: ID,
+//         coin_type: TypeName,
+//         amount_added: u64,
+//         time: u64,
+//         owner: address,
+//     }
+// }

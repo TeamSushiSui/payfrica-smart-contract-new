@@ -10,8 +10,8 @@ fun init(witness: USDC, ctx: &mut TxContext) {
         6, 
         b"USDC", 
         b"USDC", 
-        b"USDC is a USD stable coin. USDC is designed to provide a faster, safer, and more efficient way to send, spend, and exchange money", 
-        option::some<Url>(url::new_unsafe_from_bytes(b"https://i.ibb.co/1LZXjZW/e-naira-logo.png")), 
+        b"USDC is a US dollar-backed stablecoin issued by Circle. USDC is designed to provide a faster, safer, and more efficient way to send, spend, and exchange money around the world.", 
+        option::some<Url>(url::new_unsafe_from_bytes(b"https://strapi-dev.scand.app/uploads/usdc_03b37ed889.png")), 
         ctx);
     transfer::public_freeze_object(metadata);
     transfer::public_transfer(treasury, ctx.sender())
