@@ -5,7 +5,8 @@ use sui::{
     table::{Self, Table},
     package::{Self, Publisher},
     event,
-    clock::{Clock}
+    clock::{Clock},
+    
 };
 
 use std::{
@@ -41,6 +42,7 @@ public struct PayfricaAgents has key{
     agents: Table<TypeName, vector<address>>, 
     valid_types: vector<TypeName>,
 }
+
 public struct WithdrawRequest<phantom T> has key, store{
     id: UID,
     amount: u64,
@@ -146,6 +148,35 @@ public struct DepositCancelledEvent has copy, drop{
     time: u64
 }
 
+public struct SetAgentWithdrawalLimitEvent has copy, drop{
+    agent_id: address,
+    agent_type: TypeName,
+    min_withdraw_limit: u64,
+    max_withdraw_limit: u64
+}
+public struct SetAgentDepositLimitEvent has copy, drop{
+    agent_id: address,
+    agent_type: TypeName,
+    min_deposit_limit: u64,
+    max_deposit_limit: u64
+}
+
+public struct AddAgentBalanceEvent has copy, drop{
+    agent_id: address,
+    amount: u64,
+    sender: address,
+    coin_type: TypeName,
+    time: u64
+}
+
+public struct AgentBalanceWithdrawEvent has copy, drop{
+    agent_id: address,
+    amount: u64,
+    sender: address,
+    coin_type: TypeName,
+    time: u64
+}
+
 fun init(otw: AGENTS, ctx: &mut TxContext) {
     let publisher : Publisher = package::claim(otw, ctx);
     let payfrica_agents = PayfricaAgents {
@@ -211,6 +242,7 @@ public fun add_valid_agent_type<T>(cap : &Publisher,payfrica_agents: &mut Payfri
     assert!(cap.from_module<PayfricaAgents>(), ENotAuthorized);
     assert!(!payfrica_agents.valid_types.contains(&type_name), EInvalidAgentType);
     payfrica_agents.valid_types.push_back(type_name);
+    payfrica_agents.agents.add(type_name, vector::empty<address>());
     event::emit(ValidAgentTypeAddedEvent{
         agent_type: type_name,
     });
@@ -250,7 +282,7 @@ public fun withdraw<T>(agent : &mut Agent<T>, withdrawal_coin: Coin<T>, clock: &
     });
 }
 
-public fun Deposit_requests<T>(agent: &mut Agent<T>, amount: u64, clock: &Clock, ctx: &mut TxContext){
+public fun deposit_requests<T>(agent: &mut Agent<T>, amount: u64, clock: &Clock, ctx: &mut TxContext){
     let coin_type = type_name::get<T>();
     let agent_id = object::id_address(agent);
     assert!(amount > agent.min_deposit_limit && amount < agent.max_deposit_limit, ENotInAgentDepositRange);
@@ -380,12 +412,95 @@ public fun get_all_valid_agents<T>(payfrica_agents: &PayfricaAgents): vector<add
     *payfrica_agents.agents.borrow(type_name)
 }
 
-public fun set_agent_deposit_limit(){}
+public fun set_agent_deposit_limit<T>(cap : &Publisher, agent: &mut Agent<T>, min_amount: u64, max_amount: u64){
+    assert!(cap.from_module<PayfricaAgents>(), ENotAuthorized);
+    
+    agent.min_deposit_limit = min_amount;
+    agent.max_deposit_limit = max_amount;
 
-public fun set_agent_withdrawal_limit(){}
+    event::emit(SetAgentDepositLimitEvent{
+        agent_id: object::id_address(agent),
+        agent_type: type_name::get<T>(),
+        min_deposit_limit: min_amount,
+        max_deposit_limit: max_amount
+    });
+}
 
-public fun add_agent_balane(){}
+public fun set_agent_withdrawal_limit<T>(cap : &Publisher, agent: &mut Agent<T>, min_amount: u64, max_amount: u64){
+    assert!(cap.from_module<PayfricaAgents>(), ENotAuthorized);
+    
+    agent.min_withdraw_limit = min_amount;
+    agent.max_withdraw_limit = max_amount;
 
-public fun add_agent_balane_admin(){}
+    event::emit(SetAgentWithdrawalLimitEvent{
+        agent_id: object::id_address(agent),
+        agent_type: type_name::get<T>(),
+        min_withdraw_limit: min_amount,
+        max_withdraw_limit: max_amount
+    });
+}
 
-public fun withdraw_agent_balance_admin(){}
+public fun add_agent_balance<T>(payfrica_agents: &PayfricaAgents,agent: &mut Agent<T>, deposit_coin: Coin<T>, clock: &Clock, ctx: &mut TxContext){
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgent);
+    assert!(ctx.sender() == agent.addr, EInvalidAgent);
+    assert!(deposit_coin.value() > 0, EInvalidCoin);
+    assert!(deposit_coin.value() > agent.min_deposit_limit && deposit_coin.value() < agent.max_deposit_limit, ENotInAgentDepositRange);
+    let amount = deposit_coin.value();
+    let coin_balance = deposit_coin.into_balance();
+    agent.balance.join(coin_balance);
+
+    event::emit(AddAgentBalanceEvent{
+        agent_id: object::id_address(agent),
+        amount,
+        sender: ctx.sender(),
+        coin_type: type_name,
+        time: clock.timestamp_ms()
+    });
+}
+
+public fun add_agent_balance_admin<T>(cap : &Publisher,payfrica_agents: &PayfricaAgents,agent: &mut Agent<T>, deposit_coin: Coin<T>, clock: &Clock, ctx: &mut TxContext){
+    assert!(cap.from_module<PayfricaAgents>(), ENotAuthorized);
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgent);
+    assert!(deposit_coin.value() > 0, EInvalidCoin);
+    assert!(deposit_coin.value() > agent.min_deposit_limit && deposit_coin.value() < agent.max_deposit_limit, ENotInAgentDepositRange);
+    let amount = deposit_coin.value();
+    let coin_balance = deposit_coin.into_balance();
+    agent.balance.join(coin_balance);
+
+    event::emit(AddAgentBalanceEvent{
+        agent_id: object::id_address(agent),
+        amount,
+        sender: ctx.sender(),
+        coin_type: type_name,
+        time: clock.timestamp_ms()
+    });
+}
+
+#[allow(lint(self_transfer))]
+public fun withdraw_agent_balance_admin<T>(cap : &Publisher,payfrica_agents: &PayfricaAgents,agent: &mut Agent<T>, amount: u64, clock: &Clock, ctx: &mut TxContext){
+    assert!(cap.from_module<PayfricaAgents>(), ENotAuthorized);
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    assert!(agent.balance.value() - agent.total_pending_withdrawals_amount - agent.total_pending_deposits_amount >= amount, EInvalidBalance);
+    let withdraw_coin = coin::take(&mut agent.balance, amount, ctx);
+    transfer::public_transfer(withdraw_coin, ctx.sender());
+
+    event::emit(AgentBalanceWithdrawEvent{
+        agent_id: object::id_address(agent),
+        amount,
+        sender: ctx.sender(),
+        coin_type: type_name,
+        time: clock.timestamp_ms()
+    });
+}
+
+#[test_only]
+public fun call_init(ctx: &mut TxContext){
+    let otw = AGENTS{};
+    init(otw, ctx);
+}
