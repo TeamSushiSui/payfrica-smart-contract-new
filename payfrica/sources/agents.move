@@ -69,19 +69,19 @@ public struct Agent<phantom T> has key, store{
     addr: address,
     balance: Balance<T>,
     coin_type: TypeName,
-    pending_withdrawals: Table<address, WithdrawRequest<T>>,
-    successful_withdrawals: vector<WithdrawRequest<T>>,
+    pending_withdrawals: vector<ID>,
+    successful_withdrawals: vector<ID>,
     total_successful_withdrawals: u64,
     total_pending_withdrawals: u64,
     total_successful_withdrawals_amount: u64,
     total_pending_withdrawals_amount: u64,
-    pending_deposits: Table<address, DepositRequest<T>>,
-    successful_deposits: vector<DepositRequest<T>>,
+    pending_deposits: vector<ID>,
+    successful_deposits: vector<ID>,
     total_successful_deposits: u64,
     total_pending_deposits: u64,
     total_successful_deposits_amount: u64,
     total_pending_deposits_amount: u64,
-    unsuccessful_deposits: vector<DepositRequest<T>>,
+    unsuccessful_deposits: vector<ID>,
     total_unsuccessful_deposits: u64,
     max_withdraw_limit: u64,
     max_deposit_limit: u64,
@@ -100,7 +100,7 @@ public struct ValidAgentTypeAddedEvent has copy, drop{
 }
 
 public struct WithdrawalRequestEvent has copy, drop{
-    request_id: address,
+    request_id: ID,
     agent_id: address,
     amount: u64,
     user: address,
@@ -109,7 +109,7 @@ public struct WithdrawalRequestEvent has copy, drop{
     time: u64
 }
 public struct DepositRequestEvent has copy, drop{
-    request_id: address,
+    request_id: ID,
     agent_id: address,
     amount: u64,
     user: address,
@@ -119,7 +119,7 @@ public struct DepositRequestEvent has copy, drop{
 }
 
 public struct WithdrawalApprovedEvent has copy, drop{
-    request_id: address,
+    request_id: ID,
     agent_id: address,
     amount: u64,
     user: address,
@@ -129,7 +129,7 @@ public struct WithdrawalApprovedEvent has copy, drop{
 }
 
 public struct DepositApprovedEvent has copy, drop{
-    request_id: address,
+    request_id: ID,
     agent_id: address,
     amount: u64,
     user: address,
@@ -139,7 +139,7 @@ public struct DepositApprovedEvent has copy, drop{
 }
 
 public struct DepositCancelledEvent has copy, drop{
-    request_id: address,
+    request_id: ID,
     agent_id: address,
     amount: u64,
     user: address,
@@ -197,19 +197,19 @@ public fun create_agent<T>(cap : &Publisher,payfrica_agents: &mut PayfricaAgents
         addr: agent_addr,
         balance: balance::zero<T>(),
         coin_type: type_name::get<T>(),
-        pending_withdrawals: table::new<address, WithdrawRequest<T>>(ctx),
-        successful_withdrawals: vector::empty<WithdrawRequest<T>>(),
+        pending_withdrawals: vector::empty<ID>(),
+        successful_withdrawals: vector::empty<ID>(),
         total_successful_withdrawals: 0,
         total_pending_withdrawals: 0,
         total_successful_withdrawals_amount: 0,
         total_pending_withdrawals_amount: 0,
-        pending_deposits: table::new<address, DepositRequest<T>>(ctx),
-        successful_deposits: vector::empty<DepositRequest<T>>(),
+        pending_deposits: vector::empty<ID>(),
+        successful_deposits: vector::empty<ID>(),
         total_successful_deposits: 0,
         total_pending_deposits: 0,
         total_successful_deposits_amount: 0,
         total_pending_deposits_amount: 0,
-        unsuccessful_deposits: vector::empty<DepositRequest<T>>(),
+        unsuccessful_deposits: vector::empty<ID>(),
         total_unsuccessful_deposits: 0,
         max_withdraw_limit: 0,
         max_deposit_limit: 0,
@@ -226,7 +226,7 @@ public fun create_agent<T>(cap : &Publisher,payfrica_agents: &mut PayfricaAgents
     transfer::share_object(agent);
 }
 
-// fun check_valid_agent_type(valid_types: &vector<TypeName>, type_name: TypeName): bool {
+// fun get_agent(agents: &vector<address>, agent: address): Age {
 //     let mut i = 0;
 //     while(i < valid_types.length()){
 //         if (valid_types.borrow(i) == type_name) {
@@ -248,7 +248,7 @@ public fun add_valid_agent_type<T>(cap : &Publisher,payfrica_agents: &mut Payfri
     });
 }
 
-public fun withdraw<T>(agent : &mut Agent<T>, withdrawal_coin: Coin<T>, clock: &Clock, ctx: &mut TxContext) {
+public fun withdrawal_request<T>(agent : &mut Agent<T>, withdrawal_coin: Coin<T>, clock: &Clock, ctx: &mut TxContext) {
     assert!(withdrawal_coin.value() > 0, EInvalidCoin);
     assert!(withdrawal_coin.value() > agent.min_withdraw_limit && withdrawal_coin.value() < agent.max_withdraw_limit, ENotInAgentWithdrawalRange);
     let coin_type = type_name::get<T>();
@@ -266,8 +266,8 @@ public fun withdraw<T>(agent : &mut Agent<T>, withdrawal_coin: Coin<T>, clock: &
     };
     let coin_balance = withdrawal_coin.into_balance();
     agent.balance.join(coin_balance);
-    let request_id = object::id_address(&withdraw_request);
-    agent.pending_withdrawals.add(request_id, withdraw_request);
+    let request_id = *withdraw_request.id.as_inner();
+    agent.pending_withdrawals.push_back(request_id);
     agent.total_pending_withdrawals = agent.total_pending_withdrawals + 1;
     agent.total_pending_withdrawals_amount = agent.total_pending_withdrawals_amount + amount;
 
@@ -280,6 +280,7 @@ public fun withdraw<T>(agent : &mut Agent<T>, withdrawal_coin: Coin<T>, clock: &
         status: WithdrawStatus::Pending,
         time: clock.timestamp_ms()
     });
+    transfer::share_object(withdraw_request);
 }
 
 public fun deposit_requests<T>(agent: &mut Agent<T>, amount: u64, clock: &Clock, ctx: &mut TxContext){
@@ -296,8 +297,8 @@ public fun deposit_requests<T>(agent: &mut Agent<T>, amount: u64, clock: &Clock,
         request_time: clock.timestamp_ms(),
         status_time: option::none<u64>(),
     };
-    let request_id = object::id_address(&deposit_request);
-    agent.pending_deposits.add(request_id, deposit_request);
+    let request_id = *deposit_request.id.as_inner();
+    agent.pending_deposits.push_back(request_id);
     agent.total_pending_deposits = agent.total_pending_deposits + 1;
     agent.total_pending_deposits_amount = agent.total_pending_deposits_amount + amount;
 
@@ -310,14 +311,14 @@ public fun deposit_requests<T>(agent: &mut Agent<T>, amount: u64, clock: &Clock,
         status: DepositStatus::Pending,
         time: clock.timestamp_ms()
     });
+    transfer::share_object(deposit_request);
 }
 
-public fun approve_withdrawal<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, request_id: address, clock: &Clock, ctx: &mut TxContext) {
+public fun approve_withdrawal<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, withdraw_request: &mut WithdrawRequest<T>, clock: &Clock, ctx: &mut TxContext) {
     let type_name = type_name::get<T>();
     let agents = payfrica_agents.agents.borrow(type_name);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
     assert!(ctx.sender() == agent.addr, EInvalidAgent);
-    let mut withdraw_request = agent.pending_withdrawals.remove(request_id);
     assert!(withdraw_request.status == WithdrawStatus::Pending, ENotInvalidRequest);
     withdraw_request.status = WithdrawStatus::Completed;
     withdraw_request.status_time = option::some(clock.timestamp_ms());
@@ -325,7 +326,8 @@ public fun approve_withdrawal<T>(payfrica_agents: &mut PayfricaAgents, agent: &m
     agent.total_pending_withdrawals_amount = agent.total_pending_withdrawals_amount - withdraw_request.amount;
     agent.total_successful_withdrawals = agent.total_successful_withdrawals + 1;
     agent.total_pending_withdrawals = agent.total_pending_withdrawals - 1;
-
+    let request_id = *withdraw_request.id.as_inner();
+    agent.successful_withdrawals.push_back(request_id);
     event::emit(WithdrawalApprovedEvent{
         request_id,
         agent_id: object::id_address(agent),
@@ -335,15 +337,15 @@ public fun approve_withdrawal<T>(payfrica_agents: &mut PayfricaAgents, agent: &m
         status: WithdrawStatus::Completed,
         time: clock.timestamp_ms(),
     });
-    agent.successful_withdrawals.push_back(withdraw_request);
+    
 }
 
-public fun approve_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, request_id: address, clock: &Clock, ctx: &mut TxContext){
+
+public fun approve_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, deposit_request: &mut DepositRequest<T>, clock: &Clock, ctx: &mut TxContext){
     let type_name = type_name::get<T>();
     let agents = payfrica_agents.agents.borrow(type_name);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
     assert!(ctx.sender() == agent.addr, EInvalidAgent);
-    let mut deposit_request = agent.pending_deposits.remove(request_id);
     assert!(deposit_request.status == DepositStatus::Pending, ENotInvalidRequest);
     assert!(agent.balance.value() >= deposit_request.amount, ENotEnoughAgentBalance);
     let deposit_coin = coin::take(&mut agent.balance, deposit_request.amount, ctx);
@@ -354,6 +356,9 @@ public fun approve_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut
     agent.total_pending_deposits_amount = agent.total_pending_deposits_amount - deposit_request.amount;
     agent.total_successful_deposits = agent.total_successful_deposits + 1;
     agent.total_pending_deposits = agent.total_pending_deposits - 1;
+    let request_id = *deposit_request.id.as_inner();
+    remove_id_from_vec(&mut agent.pending_deposits, request_id);
+    agent.successful_deposits.push_back(request_id);
 
     event::emit(DepositApprovedEvent{
         request_id,
@@ -364,22 +369,22 @@ public fun approve_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut
         status: DepositStatus::Completed,
         time: clock.timestamp_ms(),
     });
-    agent.successful_deposits.push_back(deposit_request);
-}
+}    
 
-public fun cancel_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, request_id: address, clock: &Clock, ctx: &mut TxContext){
+public fun cancel_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, deposit_request: &mut DepositRequest<T>, clock: &Clock, ctx: &mut TxContext){
     let type_name = type_name::get<T>();
     let agents = payfrica_agents.agents.borrow(type_name);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
     assert!(ctx.sender() == agent.addr, EInvalidAgent);
-    let mut deposit_request = agent.pending_deposits.remove(request_id);
     assert!(deposit_request.status == DepositStatus::Pending, ENotInvalidRequest);
     deposit_request.status = DepositStatus::Cancelled;
     deposit_request.status_time = option::some(clock.timestamp_ms());
     agent.total_pending_deposits_amount = agent.total_pending_deposits_amount - deposit_request.amount;
     agent.total_unsuccessful_deposits = agent.total_successful_deposits + 1;
     agent.total_pending_deposits = agent.total_pending_deposits - 1;
-
+    let request_id = *deposit_request.id.as_inner();
+    remove_id_from_vec(&mut agent.pending_deposits, request_id);
+    agent.unsuccessful_deposits.push_back(request_id);
     event::emit(DepositCancelledEvent{
         request_id,
         agent_id: object::id_address(agent),
@@ -389,7 +394,6 @@ public fun cancel_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut 
         status: DepositStatus::Cancelled,
         time: clock.timestamp_ms(),
     });
-    agent.unsuccessful_deposits.push_back(deposit_request);
 }
 
 #[allow(lint(self_transfer))]
@@ -496,6 +500,59 @@ public fun withdraw_agent_balance_admin<T>(cap : &Publisher,payfrica_agents: &Pa
         coin_type: type_name,
         time: clock.timestamp_ms()
     });
+}
+
+public fun get_agent_pending_deposits<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): vector<ID>{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.pending_deposits
+}
+
+public fun get_agent_pending_withdrawal<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): vector<ID>{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.pending_withdrawals
+}
+
+public fun get_agent_unsuccessful_deposits<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): vector<ID>{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.unsuccessful_deposits
+}
+
+// public fun get_agent_unsuccessful_withdrawals<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): vector<ID>{
+//     let type_name = type_name::get<T>();
+//     let agents = payfrica_agents.agents.borrow(type_name);
+//     assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+//     agent.unsuccessful_withdrawals
+// }
+
+public fun get_agent_successful_deposits<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): vector<ID>{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.successful_deposits
+}
+
+public fun get_agent_successful_withdrawals<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): vector<ID>{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.successful_withdrawals
+}
+
+fun remove_id_from_vec(vec: &mut vector<ID>, id: ID){
+    let mut i = 0;
+    while(i < vec.length()){
+        if(vec.borrow(i) == id){
+            vec.remove(i);
+            break
+        };
+        i = i + 1;
+    };
 }
 
 #[test_only]
