@@ -1,6 +1,14 @@
 /// Module: payfrica
 module payfrica::payfrica;
 
+// public struct PayfricaDB has key{
+//     id: UID,
+    
+// }
+
+// public struct User has store{
+//     addr: address,
+// }
 
 // ngnc --> 0xc981a7aa31f6237e1fb04d60705abf84325ccfad2e78ac42421b4f76c92d9e67 0x2::coin::CoinMetadata<0x9e32e11ca091cb21b2fb882e96bb4ec42382c4e72f4cf3c370331ea0c98b45c9::ngnc::NGNC> 0xc981a7aa31f6237e1fb04d60705abf84325ccfad2e78ac42421b4f76c92d9e67
 // ghsc --> 0x2bd514a7aecbfdbb80f025a6d30e5cbf25d9dcdacdaa6425498deea5d9cb6ad8 0x2::coin::CoinMetadata<0x9e32e11ca091cb21b2fb882e96bb4ec42382c4e72f4cf3c370331ea0c98b45c9::ghsc::GHSC> 0x97da80b823153fe323e4b80f63767ed4b3306d86395c807c3325cda9ceb11163

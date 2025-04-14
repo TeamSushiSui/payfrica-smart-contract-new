@@ -248,10 +248,12 @@ public fun add_valid_agent_type<T>(cap : &Publisher,payfrica_agents: &mut Payfri
     });
 }
 
-public fun withdrawal_request<T>(agent : &mut Agent<T>, withdrawal_coin: Coin<T>, clock: &Clock, ctx: &mut TxContext) {
+public fun withdrawal_request<T>(payfrica_agents: &mut PayfricaAgents, agent : &mut Agent<T>, withdrawal_coin: Coin<T>, clock: &Clock, ctx: &mut TxContext) {
+    let coin_type = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(coin_type);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
     assert!(withdrawal_coin.value() > 0, EInvalidCoin);
     assert!(withdrawal_coin.value() > agent.min_withdraw_limit && withdrawal_coin.value() < agent.max_withdraw_limit, ENotInAgentWithdrawalRange);
-    let coin_type = type_name::get<T>();
     let amount = withdrawal_coin.value();
     let agent_id = object::id_address(agent);
     let withdraw_request = WithdrawRequest<T>{
@@ -283,8 +285,10 @@ public fun withdrawal_request<T>(agent : &mut Agent<T>, withdrawal_coin: Coin<T>
     transfer::share_object(withdraw_request);
 }
 
-public fun deposit_requests<T>(agent: &mut Agent<T>, amount: u64, clock: &Clock, ctx: &mut TxContext){
+public fun deposit_requests<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, amount: u64, clock: &Clock, ctx: &mut TxContext){
     let coin_type = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(coin_type);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
     let agent_id = object::id_address(agent);
     assert!(amount > agent.min_deposit_limit && amount < agent.max_deposit_limit, ENotInAgentDepositRange);
     let deposit_request = DepositRequest<T>{
@@ -542,6 +546,48 @@ public fun get_agent_successful_withdrawals<T>(payfrica_agents: &PayfricaAgents,
     let agents = payfrica_agents.agents.borrow(type_name);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
     agent.successful_withdrawals
+}
+
+public fun get_agent_total_pending_deposits_amount<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): u64{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.total_pending_deposits_amount
+}
+
+public fun get_agent_total_pending_withdrawals_amount<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): u64{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.total_pending_withdrawals_amount
+}
+
+public fun get_agent_balance<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): u64{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.balance.value()
+}
+
+public fun get_agent_total_transactional_balance<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): u64{
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    agent.balance.value() - agent.total_pending_withdrawals_amount - agent.total_pending_deposits_amount
+}
+
+public fun get_agent_withdrawal_limits<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): (u64, u64){
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    (agent.min_withdraw_limit, agent.max_withdraw_limit)
+}
+
+public fun get_agent_deposit_limits<T>(payfrica_agents: &PayfricaAgents, agent: &mut Agent<T>): (u64, u64){
+    let type_name = type_name::get<T>();
+    let agents = payfrica_agents.agents.borrow(type_name);
+    assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
+    (agent.min_deposit_limit, agent.max_deposit_limit)
 }
 
 fun remove_id_from_vec(vec: &mut vector<ID>, id: ID){

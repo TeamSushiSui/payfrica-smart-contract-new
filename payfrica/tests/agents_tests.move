@@ -99,11 +99,9 @@ fun call_add_valid_agent_types(scenario: &Scenario){
     scenario.return_to_sender(cap);
 }
 
-fun call_set_agent_withdrawal_limit(scenario: &Scenario, min_withdrawal_limit: u64, max_withdrawal_limit: u64) {
+fun call_set_agent_withdrawal_limit(scenario: &Scenario, agent: &mut Agent<NGNC>, min_withdrawal_limit: u64, max_withdrawal_limit: u64) {
     let cap = scenario.take_from_sender<Publisher>();
-    let mut agent = scenario.take_shared<Agent<NGNC>>();
-    agents::set_agent_withdrawal_limit<NGNC>(&cap, &mut agent, min_withdrawal_limit, max_withdrawal_limit);
-    ts::return_shared(agent);
+    agents::set_agent_withdrawal_limit<NGNC>(&cap, agent, min_withdrawal_limit, max_withdrawal_limit);
     scenario.return_to_sender(cap);
 }
 
@@ -116,8 +114,19 @@ fun call_set_agent_deposit_limit(scenario: &Scenario, agent: &mut Agent<NGNC>, m
 fun call_withdrawal_request(scenario: &mut Scenario, agent: &mut Agent<NGNC>, withdrawal_coin: Coin<NGNC>) {
     let mut test_clock = clock::create_for_testing(scenario.ctx());
     test_clock.increment_for_testing(6);
-    agents::withdrawal_request<NGNC>(agent, withdrawal_coin, &test_clock, scenario.ctx());
+    let mut payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    agents::withdrawal_request<NGNC>(&mut payfrica_agents,agent, withdrawal_coin, &test_clock, scenario.ctx());
     test_clock.destroy_for_testing();
+    ts::return_shared(payfrica_agents);
+} 
+
+fun call_approve_withdrawal_request(scenario: &mut Scenario, agent: &mut Agent<NGNC>, withdraw_request: &mut WithdrawRequest<NGNC>){
+    let mut payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    let mut test_clock = clock::create_for_testing(scenario.ctx());
+    test_clock.increment_for_testing(6);
+    agents::approve_withdrawal(&mut payfrica_agents, agent, withdraw_request, &test_clock, scenario.ctx());
+    test_clock.destroy_for_testing();
+    ts::return_shared(payfrica_agents);
 }
 
 fun call_approve_deposits(scenario: &mut Scenario, agent: &mut Agent<NGNC>, deposit_request: &mut DepositRequest<NGNC>) {
@@ -141,8 +150,10 @@ fun call_cancel_deposits(scenario: &mut Scenario, agent: &mut Agent<NGNC>, depos
 fun call_deposit_request(scenario: &mut Scenario, agent: &mut Agent<NGNC>, deposit_amount: u64) {
     let mut test_clock = clock::create_for_testing(scenario.ctx());
     test_clock.increment_for_testing(5);
-    agents::deposit_requests<NGNC>(agent, deposit_amount, &test_clock, scenario.ctx());
+    let mut payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    agents::deposit_requests<NGNC>(&mut payfrica_agents, agent, deposit_amount, &test_clock, scenario.ctx());
     test_clock.destroy_for_testing();
+    ts::return_shared(payfrica_agents);
 }
 
 fun call_add_agent_balance_admin(scenario: &mut Scenario, agent: &mut Agent<NGNC>, deposit_coin: Coin<NGNC>) {
@@ -161,6 +172,59 @@ fun call_get_all_pending_deposits_request<T>(scenario: &Scenario, agent: &mut Ag
     let request = agents::get_agent_pending_deposits(&payfrica_agents, agent);
     ts::return_shared(payfrica_agents);
     debug::print(&request);
+} 
+
+fun call_get_agent_pending_withdrawal_request<T>(scenario: &Scenario, agent: &mut Agent<T>){
+    let payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    let request = agents::get_agent_pending_withdrawal(&payfrica_agents, agent);
+    ts::return_shared(payfrica_agents);
+    debug::print(&request);
+}
+
+fun call_get_agent_balance<T>(scenario: &Scenario, agent: &mut Agent<T>) : u64{
+    let payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    let balance = agents::get_agent_balance(&payfrica_agents, agent);
+    ts::return_shared(payfrica_agents);
+    // debug::print(&balance);
+    balance
+}
+
+fun call_get_agent_total_pending_deposits_amount<T>(scenario: &Scenario, agent: &mut Agent<T>): u64{
+    let payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    let balance = agents::get_agent_total_pending_deposits_amount(&payfrica_agents, agent);
+    ts::return_shared(payfrica_agents);
+    // debug::print(&balance);
+    balance
+}
+
+fun call_get_agent_total_pending_withdrawal_amount<T>(scenario: &Scenario, agent: &mut Agent<T>): u64{
+    let payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    let balance = agents::get_agent_total_pending_withdrawals_amount(&payfrica_agents, agent);
+    ts::return_shared(payfrica_agents);
+    // debug::print(&balance);
+    balance
+}
+
+fun call_get_agent_total_transactional_balance<T>(scenario: &Scenario, agent: &mut Agent<T>): u64{
+    let payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    let balance = agents::get_agent_total_transactional_balance(&payfrica_agents, agent);
+    ts::return_shared(payfrica_agents);
+    // debug::print(&balance);
+    balance
+}
+
+fun call_get_agent_deposits_limit<T>(scenario: &Scenario, agent: &mut Agent<T>) : (u64, u64){
+    let payfrica_agents = scenario.take_shared<PayfricaAgents>();
+    let (min, max) = agents::get_agent_deposit_limits(&payfrica_agents, agent);
+    ts::return_shared(payfrica_agents);
+    (min, max)
+}
+
+fun call_get_agent_withdrawal_limit<T>(scenario: &Scenario, agent: &mut Agent<T>): (u64, u64){
+    let payfrica_agents = scenario.take_shared<PayfricaAgents>();    
+    let (min, max) = agents::get_agent_withdrawal_limits(&payfrica_agents, agent);
+    ts::return_shared(payfrica_agents);
+    (min, max)
 }
 
 fun call_get_agent(scenario: &Scenario) : Agent<NGNC>{
@@ -223,6 +287,10 @@ fun mint_usdc_return_coin(scenario: &mut Scenario, sender: address, amount: u64)
 
 fun get_deposit_requset<T>(scenario: &Scenario) : DepositRequest<T>{
     scenario.take_shared<DepositRequest<T>>()
+}
+
+fun get_withdrawal_requset<T>(scenario: &Scenario) : WithdrawRequest<T>{
+    scenario.take_shared<WithdrawRequest<T>>()
 }
 
 #[test]
@@ -316,7 +384,10 @@ fun test_create_agent() {
 fun test_set_agent_withdrawal_limit() {
     let mut scenario = ts::begin(Admin);
     set_up_agent(&mut scenario);
-    call_set_agent_withdrawal_limit(&scenario, 1000000000, 100000000000);
+    let mut agent = call_get_agent(&scenario);
+    scenario.next_tx(Admin);
+    call_set_agent_withdrawal_limit(&scenario, &mut agent, 1000000000, 100000000000);
+    ts::return_shared(agent);
     scenario.end();
 }
 
@@ -460,5 +531,61 @@ fun test_cancel_deposit_request(){
     ts::return_shared(ngnc_pool);
     ts::return_shared(agent);
     ts::return_shared(deposit_request);
+    scenario.end();
+}
+
+#[test]
+fun test_withdrawal_request(){
+    let mut scenario = ts::begin(Admin);
+    let mut usdc_coin = mint_usdc_return_coin(&mut scenario, Admin, 1000000000);
+    let usdc_coin2 =  coin::split(&mut usdc_coin, 100000000, scenario.ctx());
+    scenario.next_tx(Admin);
+    let (mut usdc_pool,mut ngnc_pool) = create_usdc_and_ngnc_pools(&mut scenario);
+    scenario.next_tx(Admin);
+    let mut ngnc_coin = mint_ngnc_return_coin(&mut scenario, &mut usdc_pool, &mut ngnc_pool, Admin, usdc_coin, usdc_coin2);
+    let ngnc_withdrawl_coin =  coin::split(&mut ngnc_coin, 10000, scenario.ctx());
+    scenario.next_tx(Admin);
+    set_up_agent(&mut scenario);
+    let mut agent = call_get_agent(&scenario);
+    scenario.next_tx(Admin);
+    call_add_agent_balance_admin(&mut scenario, &mut agent, ngnc_coin);
+    scenario.next_tx(Admin);
+    call_set_agent_withdrawal_limit(&scenario, &mut agent, 1000, 100000000000);
+    scenario.next_tx(User);
+    call_withdrawal_request(&mut scenario, &mut agent, ngnc_withdrawl_coin);
+    ts::return_shared(usdc_pool);
+    ts::return_shared(ngnc_pool);
+    ts::return_shared(agent);
+    scenario.end();
+}
+
+#[test]
+fun test_approve_withdrawal_request(){
+    let mut scenario = ts::begin(Admin);
+    let mut usdc_coin = mint_usdc_return_coin(&mut scenario, Admin, 1000000000);
+    let usdc_coin2 =  coin::split(&mut usdc_coin, 100000000, scenario.ctx());
+    scenario.next_tx(Admin);
+    let (mut usdc_pool,mut ngnc_pool) = create_usdc_and_ngnc_pools(&mut scenario);
+    scenario.next_tx(Admin);
+    let mut ngnc_coin = mint_ngnc_return_coin(&mut scenario, &mut usdc_pool, &mut ngnc_pool, Admin, usdc_coin, usdc_coin2);
+    let ngnc_withdrawl_coin =  coin::split(&mut ngnc_coin, 10000, scenario.ctx());
+    scenario.next_tx(Admin);
+    set_up_agent(&mut scenario);
+    let mut agent = call_get_agent(&scenario);
+    scenario.next_tx(Admin);
+    call_add_agent_balance_admin(&mut scenario, &mut agent, ngnc_coin);
+    scenario.next_tx(Admin);
+    call_set_agent_withdrawal_limit(&scenario, &mut agent, 1000, 100000000000);
+    scenario.next_tx(User);
+    call_withdrawal_request(&mut scenario, &mut agent, ngnc_withdrawl_coin);
+    scenario.next_tx(Agent1);
+    let mut withdrawal_request = get_withdrawal_requset<NGNC>(&scenario);
+    scenario.next_tx(Agent1);
+    call_approve_withdrawal_request(&mut scenario, &mut agent, &mut withdrawal_request);
+    scenario.next_tx(Agent1);
+    ts::return_shared(usdc_pool);
+    ts::return_shared(ngnc_pool);
+    ts::return_shared(agent);
+    ts::return_shared(withdrawal_request);
     scenario.end();
 }
