@@ -291,6 +291,7 @@ public fun deposit_requests<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
     let agent_id = object::id_address(agent);
     assert!(amount > agent.min_deposit_limit && amount < agent.max_deposit_limit, ENotInAgentDepositRange);
+    assert!(amount < agent.balance.value(), ENotEnoughAgentBalance);
     let deposit_request = DepositRequest<T>{
         id: object::new(ctx),
         amount,
@@ -343,7 +344,6 @@ public fun approve_withdrawal<T>(payfrica_agents: &mut PayfricaAgents, agent: &m
     });
     
 }
-
 
 public fun approve_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, deposit_request: &mut DepositRequest<T>, clock: &Clock, ctx: &mut TxContext){
     let type_name = type_name::get<T>();
