@@ -4,7 +4,7 @@ use sui::{
     url::{Self, Url},
     balance::{Self, Balance},
 };
-
+use std::type_name::{Self, TypeName};
 use payfrica::pool_new::{
     Pool
 };
@@ -15,7 +15,8 @@ public struct NGNC has drop{}
 
 public struct Reserve<phantom USDC> has key, store{
     id: UID,
-    balance: Balance<USDC>, // USDC held as backing
+    balance: Balance<USDC>,
+    reserve_type: TypeName,
     total_ngnc_token_supply: u64,
 }
 
@@ -33,10 +34,11 @@ fun init(witness: NGNC, ctx: &mut TxContext) {
     transfer::public_transfer(treasury, ctx.sender())
 }
 
-public fun create_reserve<USDC>(ctx: &mut TxContext) {
+public fun create_reserve<NGNC,USDC>(ctx: &mut TxContext) {
     let reserve = Reserve {
         id: object::new(ctx),
         balance: balance::zero<USDC>(),
+        reserve_type: type_name::get<NGNC>(),
         total_ngnc_token_supply: 0,
     };
     transfer::share_object(reserve);
