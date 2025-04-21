@@ -10,6 +10,7 @@ use payfrica::pool_new::{
 };
 
 const EInvalidCoinValue: u64 = 0x1;
+
 public struct NGNC has drop{}
 
 public struct Reserve<phantom USDC> has key, store{
