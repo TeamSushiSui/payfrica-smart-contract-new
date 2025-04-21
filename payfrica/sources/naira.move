@@ -47,12 +47,13 @@ public fun mint_to_pool<USDC>(
     reserve_coin: Coin<USDC>,
     treasury_cap: &mut TreasuryCap<NGNC>,
     conversion_rate: u64,
+    scale_decimal: u8,
     ctx: &mut TxContext,
 ) {
     let coin_value = reserve_coin.value(); 
     assert!(coin_value > 0, EInvalidCoinValue);
-    let scale_factor = 10u64.pow(6);
-    let amount = ((coin_value * conversion_rate) / scale_factor) * scale_factor;
+    let scale_factor = 10u64.pow(scale_decimal);
+    let amount = ((coin_value * conversion_rate) / scale_factor);
     reserve.balance.join(reserve_coin.into_balance());
     let coin = coin::mint(treasury_cap, amount, ctx);
     pool.add_mint(coin, ctx);

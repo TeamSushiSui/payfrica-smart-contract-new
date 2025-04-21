@@ -304,17 +304,17 @@ public fun claim_rewards<T>(pool: &mut Pool<T>,ctx: &mut TxContext){
 }
 
 #[allow(lint(self_transfer))]
-public fun convert_a_to_b<T0, T1>(pool_a: &mut Pool<T0>, pool_b: &mut Pool<T1>, conversion_coin: Coin<T0>, conversion_rate : u64, coin_a_decimals: u8, conversion_r_scale_decimal: u8, ctx: &mut TxContext){
+public fun convert_a_to_b<T0, T1>(pool_a: &mut Pool<T0>, pool_b: &mut Pool<T1>, conversion_coin: Coin<T0>, conversion_rate : u64, conversion_r_scale_decimal: u8, ctx: &mut TxContext){
     let sender = ctx.sender();
     let coin_value = conversion_coin.value();
     assert!(coin_value > 0, EInvalidCoinValue);
-    let coin_a_scale_factor = 10u64.pow(coin_a_decimals);
+    // let coin_a_scale_factor = 10u64.pow(coin_a_decimals);
     let conversion_r_scale_factor = 10u64.pow(conversion_r_scale_decimal);
 
     let fee = (coin_value * get_fees(pool_a, coin_value)) / 10_000;
     let net_coin_value = coin_value - fee;
 
-    let amount = (net_coin_value * conversion_rate) / (coin_a_scale_factor * conversion_r_scale_factor);
+    let amount = (net_coin_value * conversion_rate) / (conversion_r_scale_factor);
     assert!(amount <= pool_b.coin.value(), ENotEnoughLiquidityOnPool);
 
     let mut coin_balance  : Balance<T0> = conversion_coin.into_balance();

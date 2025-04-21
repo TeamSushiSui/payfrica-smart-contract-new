@@ -72,7 +72,7 @@ fun call_swap_a_2_b<T1, T2>(pool_a: &mut Pool<T1>, pool_b: &mut Pool<T2>, scenar
     // let mut ngnc_pool = scenario.take_shared<Pool<NGNC>>();
     // let mut usdc_pool = scenario.take_shared<Pool<USDC>>();
 
-    pool_a.convert_a_to_b<T1, T2>(pool_b, coin_a,  UsdcToNgncRate, 6, ConversionRateDecimal, scenario.ctx());
+    pool_a.convert_a_to_b<T1, T2>(pool_b, coin_a,  UsdcToNgncRate, ConversionRateDecimal, scenario.ctx());
     // ts::return_shared(ngnc_pool);
     // ts::return_shared(usdc_pool);
 }

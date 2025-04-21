@@ -2,10 +2,11 @@
 
 [move]
 version = 3
-manifest_digest = "2EE8D9AEF34C7F49A2E8F132A20515BEC0BA25BB0CD18B0A01631DC54DFDDC90"
-deps_digest = "F8BBB0CCB2491CA29A3DF03D6F92277A4F3574266507ACD77214D37ECA3F3082"
+manifest_digest = "9DFFD2AAB22E5557FBDC0BEB4BC552519AA7B1EDEEDFB67CF44B6D9E43624D0B"
+deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 dependencies = [
   { id = "Sui", name = "Sui" },
+  { id = "suins", name = "suins" },
 ]
 
 [[move.package]]
@@ -20,21 +21,23 @@ dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
 ]
 
+[[move.package]]
+id = "suins"
+source = { git = "https://github.com/mystenlabs/suins-contracts/", rev = "releases/testnet/core/v2", subdir = "packages/suins" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+]
+
 [move.toolchain-version]
-compiler-version = "1.45.1"
+compiler-version = "1.47.0"
 edition = "2024.beta"
 flavor = "sui"
 
 [env]
 
-[env.devnet]
-chain-id = "19012592"
-original-published-id = "0x425e075b195cb18744aa91fbd2d2c953ae3847d3335b01177d5a35be0a5d1db1"
-latest-published-id = "0x425e075b195cb18744aa91fbd2d2c953ae3847d3335b01177d5a35be0a5d1db1"
-published-version = "1"
-
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0x9e32e11ca091cb21b2fb882e96bb4ec42382c4e72f4cf3c370331ea0c98b45c9"
-latest-published-id = "0x8814de1432e8ac1fc3cf98b8d435bf4685768e4f1379f24618a47d18d1fced00"
-published-version = "3"
+original-published-id = "0x920dda82ee13d3a75f7842c7797b034f4824d7fae1649e14044a172fc784ca0d"
+latest-published-id = "0x920dda82ee13d3a75f7842c7797b034f4824d7fae1649e14044a172fc784ca0d"
+published-version = "1"
