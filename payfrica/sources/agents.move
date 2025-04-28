@@ -11,7 +11,7 @@ use sui::{
 
 use std::{
     type_name::{Self, TypeName},
-    // string::String
+    string::String
 };
 
 const EInvalidAgentType: u64 = 1;
@@ -59,6 +59,7 @@ public struct DepositRequest<phantom T> has key, store{
     agent_id: address,
     user: address,
     coin_type: TypeName,
+    comment: String,
     status: DepositStatus,
     request_time: u64,
     status_time: Option<u64>,
@@ -114,6 +115,7 @@ public struct DepositRequestEvent has copy, drop{
     amount: u64,
     user: address,
     coin_type: TypeName,
+    comment: String,
     status: DepositStatus,
     time: u64
 }
@@ -285,7 +287,7 @@ public fun withdrawal_request<T>(payfrica_agents: &mut PayfricaAgents, agent : &
     transfer::share_object(withdraw_request);
 }
 
-public fun deposit_requests<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, amount: u64, clock: &Clock, ctx: &mut TxContext){
+public fun deposit_requests<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, amount: u64, comment: String , clock: &Clock, ctx: &mut TxContext){
     let coin_type = type_name::get<T>();
     let agents = payfrica_agents.agents.borrow(coin_type);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgentType);
@@ -298,6 +300,7 @@ public fun deposit_requests<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut
         agent_id,
         user: ctx.sender(),
         coin_type,
+        comment,
         status: DepositStatus::Pending,
         request_time: clock.timestamp_ms(),
         status_time: option::none<u64>(),
@@ -313,6 +316,7 @@ public fun deposit_requests<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut
         amount,
         user: ctx.sender(),
         coin_type,
+        comment,
         status: DepositStatus::Pending,
         time: clock.timestamp_ms()
     });

@@ -10,7 +10,8 @@ use sui::{
 
 use std::{
     type_name::{Self, TypeName},
-    ascii::{String as AsciiString}
+    ascii::{String as AsciiString},
+    string::String
 };
 
 const EInvalidAgentType: u64 = 1;
@@ -66,6 +67,7 @@ public struct DepositRequest<phantom T1, phantom T2> has key, store{
     user: address,
     input_coin_type: TypeName,
     output_coin_type: TypeName,
+    comment: String,
     status: DepositStatus,
     request_time: u64,
     status_time: Option<u64>,
@@ -133,6 +135,7 @@ public struct DepositRequestEvent has copy, drop{
     user: address,
     input_coin_type: TypeName,
     output_coin_type: TypeName,
+    comment: String,
     status: DepositStatus,
     time: u64
 }
@@ -373,7 +376,7 @@ public fun withdrawal_request<T1, T2>(payfrica_agents: &mut PayfricaAgents, agen
     transfer::share_object(withdraw_request);
 }
 
-public fun deposit_requests<T1,T2>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T1,T2>, coin_t1_amount: u64, conversion_rate: u64, conversion_rate_scale_decimal: u8, clock: &Clock, ctx: &mut TxContext){
+public fun deposit_requests<T1,T2>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T1,T2>, coin_t1_amount: u64, conversion_rate: u64, conversion_rate_scale_decimal: u8, comment: String, clock: &Clock, ctx: &mut TxContext){
     let mut coin_type_t1_string = *type_name::get<T1>().borrow_string();
     let coin_type_t2_string = *type_name::get<T2>().borrow_string();
     coin_type_t1_string.append(coin_type_t2_string);
@@ -394,6 +397,7 @@ public fun deposit_requests<T1,T2>(payfrica_agents: &mut PayfricaAgents, agent: 
         user: ctx.sender(),
         input_coin_type: type_name::get<T1>(),
         output_coin_type: type_name::get<T2>(),
+        comment,
         status: DepositStatus::Pending,
         request_time: clock.timestamp_ms(),
         status_time: option::none<u64>(),
@@ -413,6 +417,7 @@ public fun deposit_requests<T1,T2>(payfrica_agents: &mut PayfricaAgents, agent: 
         user: ctx.sender(),
         input_coin_type: type_name::get<T1>(),
         output_coin_type: type_name::get<T2>(),
+        comment,
         status: DepositStatus::Pending,
         time: clock.timestamp_ms()
     });

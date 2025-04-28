@@ -2,7 +2,7 @@ module payfrica::send;
 use sui::{
     clock::Clock,
     event,
-    coin::{Self,Coin},
+    coin::{Coin},
 };
 use std::{
     string::String,
@@ -15,7 +15,7 @@ use suins::{
 };
 const ENameNotFound: u64 = 0;
 const ENameNotPointingToAddress: u64 = 1;
-const ENameExpired: u64 = 2;
+// const ENameExpired: u64 = 2;
 
 public struct CoinTransferAddressEvent has copy, drop{
     coin_type: TypeName,

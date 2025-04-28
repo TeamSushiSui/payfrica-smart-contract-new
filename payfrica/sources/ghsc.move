@@ -5,7 +5,7 @@ use sui::{
     balance::{Self, Balance},
 };
 use std::type_name::{Self, TypeName};
-use payfrica::pool_new::{
+use payfrica::pool::{
     Pool
 };
 

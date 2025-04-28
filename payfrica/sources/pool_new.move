@@ -1,4 +1,4 @@
-module payfrica::pool_new;
+module payfrica::pool;
 use sui::{
     balance::{Self, Balance},
     coin::{Self, Coin,},
@@ -19,14 +19,13 @@ const ENotEnoughLiquidity: u64 = 4;
 const ENotEnoughLiquidityOnPool: u64 = 5;
 const EFeeScenerioDoesNotExist: u64 = 6;
 
-
 public struct Payfrica has key{
     id: UID,
     tokens: vector<TypeName>,
     rewards: Bag,
 }
 
-public struct POOL_NEW has drop {}
+public struct POOL has drop {}
 
 public struct Pool<phantom T> has store, key{
     id: UID,
@@ -51,6 +50,7 @@ public struct Fee has store, drop{
 
 public struct PoolCreatedEvent has copy, drop{
     pool_id: address,
+    coin_decimal: u8,
     coin_type: TypeName,
 }
 
@@ -114,7 +114,7 @@ public struct SwapCreatedEvent has copy, drop{
     coin_b_balance: u64,
 }
 
-fun init(otw: POOL_NEW,ctx: &mut TxContext){
+fun init(otw: POOL,ctx: &mut TxContext){
     let publisher : Publisher = package::claim(otw, ctx);
     let pool = Payfrica{
         id: object::new(ctx),
@@ -125,7 +125,7 @@ fun init(otw: POOL_NEW,ctx: &mut TxContext){
     transfer::share_object(pool);
 }
 
-public fun create_new_pool<T>(cap : &Publisher, ctx: &mut TxContext) {
+public fun create_new_pool<T>(cap : &Publisher, coin_decimal: u8, ctx: &mut TxContext) {
     assert!(cap.from_module<Payfrica>(), ENotAuthorized);
     let pool = Pool {
         id: object::new(ctx),
@@ -140,6 +140,7 @@ public fun create_new_pool<T>(cap : &Publisher, ctx: &mut TxContext) {
     let pool_id = object::id_address(&pool);
     event::emit(PoolCreatedEvent{ 
         pool_id,
+        coin_decimal,
         coin_type: type_name::get<T>(),
     });
     transfer::public_share_object(pool);
@@ -393,7 +394,7 @@ fun get_fees<T>(pool: &Pool<T>, amount: u64) : u64{
 
 #[test_only]
 public fun call_init(ctx: &mut TxContext){
-    let otw = POOL_NEW{};
+    let otw = POOL{};
     init(otw, ctx);
 }
 

@@ -1,5 +1,5 @@
-/// Module: payfrica
-module payfrica::payfrica;
+// Module: payfrica
+// module payfrica::payfrica;
 
 // public struct PayfricaDB has key{
 //     id: UID,
