@@ -125,6 +125,7 @@ public struct WithdrawalRequestEvent has copy, drop{
     status: WithdrawStatus,
     time: u64
 }
+
 public struct DepositRequestEvent has copy, drop{
     request_id: ID,
     agent_id: address,

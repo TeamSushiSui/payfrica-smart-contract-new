@@ -38,6 +38,13 @@ public struct Pool<phantom T> has store, key{
     fee_decimal: u8,
 }
 
+public struct PayfricaPoolTicket<phantom T> has key{
+    id: UID,
+    pool_id: address,
+    amount_added: u64,
+    owner: address,
+}
+
 public struct Providers<phantom T> has store{
     amount: u64,
     rewards: Balance<T>,
@@ -52,6 +59,13 @@ public struct PoolCreatedEvent has copy, drop{
     pool_id: address,
     coin_decimal: u8,
     coin_type: TypeName,
+}
+
+public struct AddMintEvent has copy, drop{
+    pool_id: address,
+    coin_type: TypeName,
+    amount: u64,
+    coin_balance: u64,
 }
 
 public struct PoolDefualtFeesUpdatedEvent has copy, drop{
@@ -150,6 +164,15 @@ public fun add_mint<T>(pool: &mut Pool<T>, coin: Coin<T>, ctx: &mut TxContext) {
     let coin_value = coin.value();
     assert!(coin_value > 0, EInvalidCoinValue);
     pool.coin.join(coin.into_balance());
+
+    event::emit(
+        AddMintEvent{
+            pool_id: object::id_address(pool),
+            coin_type: type_name::get<T>(),
+            amount: coin_value,
+            coin_balance: pool.coin.value(),
+        }
+    );
 }
 
 public fun set_default_fees<T>(pool: &mut Pool<T>, cap : &Publisher, defualt_fees: u64){
@@ -209,7 +232,7 @@ public fun update_swap_fees_scenario<T>(pool: &mut Pool<T>, cap : &Publisher, th
     );
 }
 
-public fun add_liquidity<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, liquidity_coin: Coin<T>,ctx: &mut TxContext){
+public fun add_liquidity<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, pool_ticket:&mut Option<PayfricaPoolTicket<T>>, liquidity_coin: Coin<T>,ctx: &mut TxContext){
     let sender = ctx.sender();
     let amount = liquidity_coin.value();
     assert!(EInvalidCoinValue != 0, 0);
@@ -217,13 +240,22 @@ public fun add_liquidity<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, liquidi
     if (pool.liquidity_providers.contains(sender)){
         let provider = pool.liquidity_providers.borrow_mut(sender);
         provider.amount = provider.amount + amount;
+        let ticket = option::borrow_mut(pool_ticket);
+        ticket.amount_added = ticket.amount_added + amount;
     } else{
         let providers = Providers<T>{
             amount,
             rewards: balance::zero<T>()
         };
+        let pool_ticket = PayfricaPoolTicket<T>{
+            id: object::new(ctx),
+            pool_id: object::id_address(pool),
+            amount_added: amount,
+            owner: sender,
+        };
         pool.liquidity_providers.add(sender, providers);
         pool.liquidity_providers_list.push_back(sender);
+        transfer::transfer(pool_ticket, ctx.sender());
     };
     let coin_balance : Balance<T> = liquidity_coin.into_balance();
     balance::join(&mut pool.coin, coin_balance);
@@ -337,7 +369,7 @@ public fun convert_a_to_b<T0, T1>(pool_a: &mut Pool<T0>, pool_b: &mut Pool<T1>, 
         input_coin_amount: coin_value,
         output_coin_amount: amount,
         coin_a_balance: pool_a.coin.value(),
-        coin_b_balance: pool_a.coin.value(),
+        coin_b_balance: pool_b.coin.value(),
     });
 }
 
