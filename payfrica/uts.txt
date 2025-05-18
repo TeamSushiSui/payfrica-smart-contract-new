@@ -585,3 +585,14 @@ GHSC POOL
 │  │ Digest: 9xq16uSekgXUpRrLrPJiMyjdZAagejP5YB6WsCXzYQDD                                                                                                                      │
 │  └── 
 
+USDC POOL
+
+ Created Objects:                                                                                                                                                             │
+│  ┌──                                                                                                                                                                         │
+│  │ ObjectID: 0xb7819806ef6a8d985e51fd0527d39a8f421af2d43a9c77c7f7c8f2f4ccdaa659                                                                                              │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                                                                                │
+│  │ Owner: Shared( 408844586 )                                                                                                                                                │
+│  │ ObjectType: 0x7b9682e0b7705b3bda433366a2330b06352a551edb9b0e164c0cdc4ec3d6f92::pool::Pool<0x7b9682e0b7705b3bda433366a2330b06352a551edb9b0e164c0cdc4ec3d6f92::usdc::USDC>  │
+│  │ Version: 408844586                                                                                                                                                        │
+│  │ Digest: 6b6g6SPyqG6auaoEuBp7wxRx49t65dU7N9YY3g23pbE5                                                                                                                      │
+│  └──    

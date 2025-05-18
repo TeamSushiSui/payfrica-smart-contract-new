@@ -1,5 +1,58 @@
 // Module: payfrica
-// module payfrica::payfrica;
+module payfrica::payfrica;
+
+use sui::package::{Self, Publisher};
+
+const ENotAnAdmin: u64 = 0;
+const ENotAuthorized: u64 = 1;
+
+public struct Payfrica has key{
+    id: UID,
+    admin: vector<address>,
+}
+
+public struct PAYFRICA has drop {}
+
+public struct PayfricaUser has key, store{
+    id: UID,
+    addr: address,
+}
+
+fun init(otw: PAYFRICA,ctx: &mut TxContext){
+    let publisher : Publisher = package::claim(otw, ctx);
+    let payfrica = Payfrica{
+        id: object::new(ctx),
+        admin: vector::empty<address>(),
+    };
+    transfer::public_transfer(publisher, ctx.sender());
+    transfer::share_object(payfrica);
+}
+
+public fun make_user(payfrica: &mut Payfrica, user: address,ctx: &mut TxContext){
+    assert!(payfrica.admin.contains(&ctx.sender()), ENotAnAdmin);
+    let user = PayfricaUser{
+        id: object::new(ctx),
+        addr: user
+    };
+    transfer::public_transfer(user, ctx.sender());
+}
+
+public fun add_admin(cap : &Publisher, payfrica: &mut Payfrica, admin: address){
+    assert!(cap.from_module<Payfrica>(), ENotAuthorized);
+    payfrica.admin.push_back(admin);
+}
+
+public fun remove_admin(cap : &Publisher, payfrica: &mut Payfrica, admin: address){
+    assert!(cap.from_module<Payfrica>(), ENotAuthorized);
+    let mut i = 0;
+    while(i < payfrica.admin.length()){
+        if (payfrica.admin.borrow(i) == admin){
+            payfrica.admin.remove(i);
+        };
+        i = i + 1;
+    };
+}
+
 
 // public struct PayfricaDB has key{
 //     id: UID,
@@ -18,6 +71,5 @@
 
 // package --> 0x9e32e11ca091cb21b2fb882e96bb4ec42382c4e72f4cf3c370331ea0c98b45c9
 // publisher --> 0xa6fb0b88ced24705d04941cba7adecb1e985331a88d7c4da01436abe299b9e27
-
 
 //ngnc/usdc pool --> 0x8e8d499045006ea11838f49e5055a93c07b64fc7b5e0c3ad664263d2b00ce5de

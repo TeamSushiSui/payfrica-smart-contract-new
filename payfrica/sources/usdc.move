@@ -35,4 +35,3 @@ public fun burn(treasury_cap: &mut TreasuryCap<USDC>, coin: Coin<USDC>) {
 public fun call_init(ctx: &mut TxContext) {
     init(USDC{} , ctx);
 }
-

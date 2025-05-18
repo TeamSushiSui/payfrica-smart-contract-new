@@ -8,6 +8,7 @@ use std::{
     string::String,
     type_name::{Self, TypeName}
 };
+
 use suins::{ 
     suins::SuiNS,
     registry::Registry,

@@ -346,7 +346,6 @@ public fun approve_withdrawal<T>(payfrica_agents: &mut PayfricaAgents, agent: &m
         status: WithdrawStatus::Completed,
         time: clock.timestamp_ms(),
     });
-    
 }
 
 public fun approve_deposits<T>(payfrica_agents: &mut PayfricaAgents, agent: &mut Agent<T>, deposit_request: &mut DepositRequest<T>, clock: &Clock, ctx: &mut TxContext){
