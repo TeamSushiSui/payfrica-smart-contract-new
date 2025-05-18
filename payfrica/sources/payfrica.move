@@ -9,6 +9,7 @@ const ENotAuthorized: u64 = 1;
 public struct Payfrica has key{
     id: UID,
     admin: vector<address>,
+    users: vector<address>,
 }
 
 public struct PAYFRICA has drop {}
@@ -23,18 +24,20 @@ fun init(otw: PAYFRICA,ctx: &mut TxContext){
     let payfrica = Payfrica{
         id: object::new(ctx),
         admin: vector::empty<address>(),
+        users: vector::empty<address>(),
     };
     transfer::public_transfer(publisher, ctx.sender());
     transfer::share_object(payfrica);
 }
 
-public fun make_user(payfrica: &mut Payfrica, user: address,ctx: &mut TxContext){
+public fun make_user(payfrica: &mut Payfrica, user_address: address,ctx: &mut TxContext){
     assert!(payfrica.admin.contains(&ctx.sender()), ENotAnAdmin);
+    assert!(payfrica.users.contains(&user_address), ENotAuthorized);
     let user = PayfricaUser{
         id: object::new(ctx),
-        addr: user
+        addr: user_address
     };
-    transfer::public_transfer(user, ctx.sender());
+    transfer::public_transfer(user, user_address);
 }
 
 public fun add_admin(cap : &Publisher, payfrica: &mut Payfrica, admin: address){

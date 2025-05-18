@@ -160,7 +160,7 @@ public fun create_new_pool<T>(cap : &Publisher, coin_decimal: u8, ctx: &mut TxCo
     transfer::public_share_object(pool);
 }
 
-public fun add_mint<T>(pool: &mut Pool<T>, coin: Coin<T>, ctx: &mut TxContext) {
+public fun add_mint<T>(pool: &mut Pool<T>, coin: Coin<T>) {
     let coin_value = coin.value();
     assert!(coin_value > 0, EInvalidCoinValue);
     pool.coin.join(coin.into_balance());
@@ -232,15 +232,15 @@ public fun update_swap_fees_scenario<T>(pool: &mut Pool<T>, cap : &Publisher, th
     );
 }
 
-public fun create_pool_ticket<T>(pool: &Pool<T>, ctx: &mut TxContext) : PayfricaPoolTicket<T>{
-    let pool_ticket = PayfricaPoolTicket<T>{
-        id: object::new(ctx),
-        pool_id: object::id_address(pool),
-        amount_added: 0,
-        owner: ctx.sender(),
-    };
-    pool_ticket
-}
+// public fun create_pool_ticket<T>(pool: &Pool<T>, ctx: &mut TxContext) : PayfricaPoolTicket<T>{
+//     let pool_ticket = PayfricaPoolTicket<T>{
+//         id: object::new(ctx),
+//         pool_id: object::id_address(pool),
+//         amount_added: 0,
+//         owner: ctx.sender(),
+//     };
+//     pool_ticket
+// }
 
 public fun add_liquidity<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, pool_ticket:&mut PayfricaPoolTicket<T>, liquidity_coin: Coin<T>,ctx: &mut TxContext){
     let sender = ctx.sender();
@@ -267,6 +267,34 @@ public fun add_liquidity<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, pool_ti
         amount: pool.coin.value(),
         coin_balance: pool.coin.value(),
     });
+}
+
+public fun add_liquidity_new<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, liquidity_coin: Coin<T>,ctx: &mut TxContext){
+    let sender = ctx.sender();
+    let amount = liquidity_coin.value();
+    assert!(EInvalidCoinValue != 0, 0);
+    spilt_rewards(pool, payfrica, ctx);
+    let pool_ticket = PayfricaPoolTicket<T>{
+        id: object::new(ctx),
+        pool_id: object::id_address(pool),
+        amount_added: 0,
+        owner: ctx.sender(),
+    };
+    let providers = Providers<T>{
+        amount,
+        rewards: balance::zero<T>()
+    };
+    pool.liquidity_providers.add(sender, providers);
+    pool.liquidity_providers_list.push_back(sender);
+    let coin_balance : Balance<T> = liquidity_coin.into_balance();
+    balance::join(&mut pool.coin, coin_balance);
+    event::emit(AddedToLiquidityPoolEvent{
+        pool_id: object::id_address(pool),
+        coin_type: type_name::get<T>(),
+        amount: pool.coin.value(),
+        coin_balance: pool.coin.value(),
+    });
+    transfer::public_transfer(pool_ticket, ctx.sender());
 }
 // public fun add_liquidity<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, pool_ticket:&mut Option<PayfricaPoolTicket<T>>, liquidity_coin: Coin<T>,ctx: &mut TxContext){
 //     let sender = ctx.sender();

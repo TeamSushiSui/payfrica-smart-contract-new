@@ -31,7 +31,7 @@ public fun mint_to_pool(
     ctx: &mut TxContext,
 ) {
     let coin = coin::mint(treasury_cap, amount, ctx);
-    pool.add_mint(coin, ctx);
+    pool.add_mint(coin);
 } 
 
 public fun burn(treasury_cap: &mut TreasuryCap<NGNC>, coin: Coin<NGNC>) {
