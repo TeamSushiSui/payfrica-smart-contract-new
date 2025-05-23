@@ -458,13 +458,13 @@ public fun add_agent_balance<T>(payfrica_agents: &PayfricaAgents,agent: &mut Age
     assert!(ctx.sender() == agent.addr, EInvalidAgent);
     assert!(deposit_coin.value() > 0, EInvalidCoin);
     assert!(deposit_coin.value() > agent.min_deposit_limit && deposit_coin.value() < agent.max_deposit_limit, ENotInAgentDepositRange);
-    let amount = deposit_coin.value();
+    // let amount = deposit_coin.value();
     let coin_balance = deposit_coin.into_balance();
     agent.balance.join(coin_balance);
 
     event::emit(AddAgentBalanceEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.balance.value(),
         sender: ctx.sender(),
         coin_type: type_name,
         time: clock.timestamp_ms()
@@ -477,13 +477,13 @@ public fun add_agent_balance_admin<T>(cap : &Publisher,payfrica_agents: &Payfric
     let agents = payfrica_agents.agents.borrow(type_name);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgent);
     assert!(deposit_coin.value() > 0, EInvalidCoin);
-    let amount = deposit_coin.value();
+    // let amount = deposit_coin.value();
     let coin_balance = deposit_coin.into_balance();
     agent.balance.join(coin_balance);
 
     event::emit(AddAgentBalanceEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.balance.value(),
         sender: ctx.sender(),
         coin_type: type_name,
         time: clock.timestamp_ms()
@@ -502,7 +502,7 @@ public fun withdraw_agent_balance_admin<T>(cap : &Publisher,payfrica_agents: &Pa
 
     event::emit(AgentBalanceWithdrawEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.balance.value(),
         sender: ctx.sender(),
         coin_type: type_name,
         time: clock.timestamp_ms()

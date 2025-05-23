@@ -605,13 +605,13 @@ public fun add_agent_base_balance<T1,T2>(payfrica_agents: &PayfricaAgents,agent:
     assert!(ctx.sender() == agent.addr, EInvalidAgent);
     assert!(deposit_coin.value() > 0, EInvalidCoin);
     assert!(deposit_coin.value() > agent.min_deposit_limit && deposit_coin.value() < agent.max_deposit_limit, ENotInAgentDepositRange);
-    let amount = deposit_coin.value();
+    // let amount = deposit_coin.value();
     let coin_balance = deposit_coin.into_balance();
     agent.base_balance.join(coin_balance);
 
     event::emit(AddAgentBaseBalanceEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.base_balance.value(),
         sender: ctx.sender(),
         type_a: type_name::get<T1>(),
         type_b: type_name::get<T2>(),
@@ -628,13 +628,13 @@ public fun add_agent_sui_coin_balance<T1,T2>(payfrica_agents: &PayfricaAgents,ag
     assert!(ctx.sender() == agent.addr, EInvalidAgent);
     assert!(deposit_coin.value() > 0, EInvalidCoin);
     assert!(deposit_coin.value() > agent.min_deposit_limit && deposit_coin.value() < agent.max_deposit_limit, ENotInAgentDepositRange);
-    let amount = deposit_coin.value();
+    // let amount = deposit_coin.value();
     let coin_balance = deposit_coin.into_balance();
     agent.sui_coin_balance.join(coin_balance);
 
     event::emit(AddAgentSuiCoinBalanceEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.sui_coin_balance.value(),
         sender: ctx.sender(),
         type_a: type_name::get<T1>(),
         type_b: type_name::get<T2>(),
@@ -650,13 +650,13 @@ public fun add_agent_base_balance_admin<T1,T2>(cap : &Publisher,payfrica_agents:
     let agents = payfrica_agents.agents.borrow(coin_type_t1_string);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgent);
     assert!(deposit_coin.value() > 0, EInvalidCoin);
-    let amount = deposit_coin.value();
+    // let amount = deposit_coin.value();
     let coin_balance = deposit_coin.into_balance();
     agent.base_balance.join(coin_balance);
 
     event::emit(AddAgentBaseBalanceEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.base_balance.value(),
         sender: ctx.sender(),
         type_a: type_name::get<T1>(),
         type_b: type_name::get<T2>(),
@@ -672,13 +672,13 @@ public fun add_agent_sui_coin_balance_admin<T1,T2>(cap : &Publisher,payfrica_age
     let agents = payfrica_agents.agents.borrow(coin_type_t1_string);
     assert!(agents.contains(&object::id_address(agent)), EInvalidAgent);
     assert!(deposit_coin.value() > 0, EInvalidCoin);
-    let amount = deposit_coin.value();
+    // let amount = deposit_coin.value();
     let coin_balance = deposit_coin.into_balance();
     agent.sui_coin_balance.join(coin_balance);
 
     event::emit(AddAgentSuiCoinBalanceEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.sui_coin_balance.value(),
         sender: ctx.sender(),
         type_a: type_name::get<T1>(),
         type_b: type_name::get<T2>(),
@@ -700,7 +700,7 @@ public fun withdraw_agent_base_balance_admin<T1,T2>(cap : &Publisher,payfrica_ag
 
     event::emit(AgentBaseBalanceWithdrawEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.base_balance.value(),
         sender: ctx.sender(),
         type_a: type_name::get<T1>(),
         type_b: type_name::get<T2>(),
@@ -722,7 +722,7 @@ public fun withdraw_agent_sui_coin_balance_admin<T1,T2>(cap : &Publisher,payfric
 
     event::emit(AgentSuiCoinBalanceWithdrawEvent{
         agent_id: object::id_address(agent),
-        amount,
+        amount: agent.sui_coin_balance.value(),
         sender: ctx.sender(),
         type_a: type_name::get<T1>(),
         type_b: type_name::get<T2>(),

@@ -2,6 +2,7 @@
 module payfrica::payfrica;
 
 use sui::package::{Self, Publisher};
+use sui::pay;
 
 const ENotAnAdmin: u64 = 0;
 const ENotAuthorized: u64 = 1;
@@ -37,6 +38,7 @@ public fun make_user(payfrica: &mut Payfrica, user_address: address,ctx: &mut Tx
         id: object::new(ctx),
         addr: user_address
     };
+    payfrica.users.push_back(user_address);
     transfer::public_transfer(user, user_address);
 }
 
@@ -56,6 +58,9 @@ public fun remove_admin(cap : &Publisher, payfrica: &mut Payfrica, admin: addres
     };
 }
 
+public fun check_payfrica_user(payfrica: &Payfrica, payfrica_user: &PayfricaUser) : bool{
+    payfrica.users.contains(&payfrica_user.addr)
+}
 
 // public struct PayfricaDB has key{
 //     id: UID,

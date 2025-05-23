@@ -264,7 +264,7 @@ public fun add_liquidity<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, pool_ti
     event::emit(AddedToLiquidityPoolEvent{
         pool_id: object::id_address(pool),
         coin_type: type_name::get<T>(),
-        amount: pool.coin.value(),
+        amount,
         coin_balance: pool.coin.value(),
     });
 }
@@ -277,7 +277,7 @@ public fun add_liquidity_new<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, liq
     let pool_ticket = PayfricaPoolTicket<T>{
         id: object::new(ctx),
         pool_id: object::id_address(pool),
-        amount_added: 0,
+        amount_added: amount,
         owner: ctx.sender(),
     };
     let providers = Providers<T>{
@@ -291,7 +291,7 @@ public fun add_liquidity_new<T>(pool: &mut Pool<T>, payfrica: &mut Payfrica, liq
     event::emit(AddedToLiquidityPoolEvent{
         pool_id: object::id_address(pool),
         coin_type: type_name::get<T>(),
-        amount: pool.coin.value(),
+        amount,
         coin_balance: pool.coin.value(),
     });
     transfer::public_transfer(pool_ticket, ctx.sender());
@@ -357,7 +357,7 @@ public fun remove_liquidity<T>(pool: &mut Pool<T>, pool_ticket:&mut PayfricaPool
     event::emit(RemovedFromLiquidityPoolEvent{
         pool_id: object::id_address(pool),
         coin_type: type_name::get<T>(),
-        amount: pool.coin.value(),
+        amount: amount,
         coin_balance: pool.coin.value(),
     });
 }

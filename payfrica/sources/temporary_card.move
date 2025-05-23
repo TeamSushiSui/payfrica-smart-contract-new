@@ -1,5 +1,5 @@
 module payfrica::temporary_card;
-use payfrica::payfrica::PayfricaUser;
+use payfrica::payfrica::{Self, PayfricaUser, Payfrica};
 use sui::table::{Self, Table};
 use std::ascii::String;
 use sui::event;
@@ -8,6 +8,7 @@ use sui::coin::Coin;
 
 const ECardBlocked: u64 = 1; 
 const ENotAuthorized: u64 = 2;  
+const ENotPayfricaUser: u64 = 3;
 
 public struct PayficaTemporaryCards has key, store{
     id: UID,
@@ -27,7 +28,7 @@ public struct CardCreatedEvent has copy, drop{
     card_address: address,
     owner: address,
     expiration_date: u64,
-    hp: vector<u8>,
+    hp: String,
     s: String,
     blobId: String,
     blobObjectId: address,
@@ -57,6 +58,7 @@ public struct CardUsedEvent has copy, drop{
     card_id: ID,
     card_address: address,
     receiver: address,
+    receiver_ns: String,
     amount: u64,
     owner: address,
     time: u64
@@ -88,7 +90,7 @@ public struct TemporaryCard has key, store{
     s: String,
     card_address: address,
     expiration_date: u64,
-    hp: vector<u8>,
+    hp: String,
     blocked: bool,
     false_attemps: u8,
     num_unlocks: u8,
@@ -105,7 +107,7 @@ fun init(ctx: &mut TxContext) {
 }
 
 #[allow(unused_variable)]
-public fun create_card(temporary_card: &mut PayficaTemporaryCards, payfrica_user: &mut PayfricaUser, card_address: address, name: String, expiration_date: u64, hp: vector<u8>, s: String, blobId: String, blobObjectId: address, blobUrl: String, clock: &Clock, ctx: &mut TxContext){
+public fun create_card(temporary_card: &mut PayficaTemporaryCards, payfrica_user: &mut PayfricaUser, card_address: address, name: String, expiration_date: u64, hp: String, s: String, blobId: String, blobObjectId: address, blobUrl: String, clock: &Clock, ctx: &mut TxContext){
     let card = TemporaryCard{
         id: object::new(ctx),
         name,
@@ -143,7 +145,7 @@ public fun create_card(temporary_card: &mut PayficaTemporaryCards, payfrica_user
 }
 
 #[allow(unused_variable)]
-public fun try_unlock(payfrica_cards: &mut PayficaTemporaryCards, payfrica_user: &mut PayfricaUser, owner: address, card_address: address, hp: vector<u8>, clock: &Clock, ctx: &mut TxContext) : bool{
+public fun try_unlock(payfrica_cards: &mut PayficaTemporaryCards, payfrica_user: &mut PayfricaUser, owner: address, card_address: address, hp: String, clock: &Clock, ctx: &mut TxContext) : bool{
     let card = payfrica_cards.cards.borrow_mut(card_address);
     assert!(!card.blocked, ECardBlocked);
     if(hp == card.hp){
@@ -182,7 +184,7 @@ public fun try_unlock(payfrica_cards: &mut PayficaTemporaryCards, payfrica_user:
     }
 }
 
-public fun use_card<T>(payfrica_cards: &mut PayficaTemporaryCards, use_coin: Coin<T>, owner: address, receiver: address, clock: &Clock, ctx: &mut TxContext){
+public fun use_card<T>(payfrica_cards: &mut PayficaTemporaryCards, use_coin: Coin<T>, owner: address, receiver_ns: String, receiver: address, clock: &Clock, ctx: &mut TxContext){
     let card = payfrica_cards.cards.borrow(ctx.sender());
     assert!(!card.blocked, ECardBlocked);
     event::emit(
@@ -190,6 +192,7 @@ public fun use_card<T>(payfrica_cards: &mut PayficaTemporaryCards, use_coin: Coi
             card_id: *card.id.as_inner(),
             card_address: ctx.sender(),
             receiver,
+            receiver_ns,
             amount: use_coin.value(),
             owner,
             time: clock.timestamp_ms()
@@ -226,8 +229,8 @@ public fun get_num_unlocks(payfrica_cards: &mut PayficaTemporaryCards, card_addr
 }
 
 #[allow(unused_variable)]
-public fun seal_approve(payfrica_user: &mut PayfricaUser) {
-    
+public fun seal_approve(payfrica: &Payfrica,payfrica_user: &mut PayfricaUser, id: vector<u8>) {
+    assert!(payfrica::check_payfrica_user(payfrica, payfrica_user), ENotPayfricaUser);
 }
 
 #[allow(unused_variable)]

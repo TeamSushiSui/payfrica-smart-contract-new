@@ -163,3 +163,8 @@
 │  │ Modules: agents, bridge_agents, ghsc, kesc, ngnc, payfrica, pool, send, temporary_card, usdc                           │
 │  └──                                                                                                                      │
 ╰─────────────
+
+NGNC POOL ==> 0x7b5dc1b3367ec9e49d6723bebd326dc81810ba7968094dbf83abac67a07d6b1f
+GHSC POOL ==> 0xdb628fc908cbc7a1fd8762f95a55e0afbf88681086bbdece36836eb016a569d6
+KESC POOL ==> 0x03d3185919bdd82ec0f316b2e537c19b912e416dfe07a7e8232b998917d3fa75
+USDC POOL ==> 0x1aee99c73a16c7a66808084d5b04068b8085138e446f0139169d9cb9a97ce1d9
