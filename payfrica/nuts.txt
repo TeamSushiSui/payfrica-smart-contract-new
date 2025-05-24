@@ -1,0 +1,165 @@
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Object Changes                                                                                                            │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Created Objects:                                                                                                          │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x06ac11fa0ae879e8779b6d39cdc272b0ba8a9220e4ee6a3f910bfe7f3650c0db                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::package::Publisher                                                                                    │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 3yMaPup3ZNPufshWnzEKSgEToNHW7334TnF2zdAfjete                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x111700b4b471539bc7158f30f5325a702f2fc22a537ff2f4e4f8f2aa6ff09030                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Shared( 435217736 )                                                                                             │
+│  │ ObjectType: 0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::bridge_agents::PayfricaAgents          │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: FVqncU7oGbjFY2o2jFgrMPV2agYP2PjHN1DfpfRg1W5o                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x2af05c43d3f770631e8985e633b519b7feeda044947d3357b6b64576d7b40841                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Immutable                                                                                                       │
+│  │ ObjectType: 0x2::coin::CoinMetadata<0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::ngnc::NGNC>    │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 2BUcAnbeGcebt3Se3P8XjhqvGYnELrhzbAEsj3eMUnXy                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x4dffabaacb950314bde7931996966bd262026733ce4451073e24f7e2dafa9bbd                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::coin::TreasuryCap<0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::ghsc::GHSC>     │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 6nMpVuNFMWmNBzBxZUAef1mqpgcUsZcacv1StGesRpBi                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x5ae0332e635d9aeec88c4383717797e7bc0748d191d89339d1affa0a0240e637                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::package::Publisher                                                                                    │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 4MVx8L7Lvtoz1nng8mg3pd4zAtRJRtiCzVMQKgHTdnT9                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x8a72bb2559c6f1ae5d79993ef2c744cefd6942498fc91d9856d713a243fb0632                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Shared( 435217736 )                                                                                             │
+│  │ ObjectType: 0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::temporary_card::PayficaTemporaryCards  │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 2hfwVYfw75SAz38poFG2PCVeeJo3PaeYzPuG1BrSdXzb                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x8a801999a070624389c7248a70ecb6eee1128e7de9550962ad27e4010ea0f678                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Shared( 435217736 )                                                                                             │
+│  │ ObjectType: 0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::agents::PayfricaAgents                 │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 5RhLjfuT1wXHRQGfRL7h3eEJA5NUBymWLw3JBy3oBkm8                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xa115030dd83935bae3651c183e33c0b2479b13c0d91e93af40bc6ca34047b8e4                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Immutable                                                                                                       │
+│  │ ObjectType: 0x2::coin::CoinMetadata<0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::kesc::KESC>    │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: sPL3XEfCvr5rgw6dxqFMfPxoSYgVYk19fmv5ctoT52f                                                                    │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xa338e3cd0fa775131d7a89138d3b7d53786b6822446f05722ce5fd1ef69e8089                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::package::Publisher                                                                                    │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: DpYyqjVHEFt9T82m3wGLAf74YvfGXhAoRhmkzf1gSvXv                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xa81071a5481d12b6fa0ac52a9b9a068e4fff7f298cbed4ec6e5938109851f993                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::coin::TreasuryCap<0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::ngnc::NGNC>     │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: EDUasNtp6z88E75rpFtKaQPbgwZehgP22EYDVgsfTsCt                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xaadcf49f0a7cacf923980efb691fedf3848c1946ee1d88a69de6339c80796dc5                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::coin::TreasuryCap<0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::kesc::KESC>     │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: DvQZxnxQTrhCWYZZMY1ZcAqSvDGVQA7YauGsbUMokzez                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xb8132a67111382556cf409aa3baed202e346c1023609c790a547088c5f35278d                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::package::UpgradeCap                                                                                   │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 94W7T7rbYA18tSUkTn1DWjxN9UEydFiqbgjgnDSzattw                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xc0068fc8efd6edfeee7e0afc1ed7c8f4028f62fd07067ea81364bd6e00fbf687                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Shared( 435217736 )                                                                                             │
+│  │ ObjectType: 0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::payfrica::Payfrica                     │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: H1SMv1Sqws9GpTQsLNFHEmcaxq1fYyuxRnXnsFu96xVa                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xc16ceab2be439e73d474860a8a679eee622df3243c048f5f692a9e8df91df00c                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Immutable                                                                                                       │
+│  │ ObjectType: 0x2::coin::CoinMetadata<0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::ghsc::GHSC>    │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: EeQ9dxdN7sf6ig1AQ9YbQdpLL9GoNdYDaPHnWFDMNRFT                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xd3e549a12a12881e84cfc6bb1066f417a106cc546f7edfc088329e8e5a2fad61                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::package::Publisher                                                                                    │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 8b81sk29AgmggCywaexWHWsamUCm81KTsGEJw2q9TQta                                                                   │
+│  └──                                                                                                                      │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0xf721abc51443bbd849f758b49a181380c514a8651487119e54b0e03d9dd1fd04                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Shared( 435217736 )                                                                                             │
+│  │ ObjectType: 0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8::pool::Payfrica                         │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: Ed8RjtYKEfa7uHsbkvpiHFHuD2w7rvs4hkkiSRBUoPDr                                                                   │
+│  └──                                                                                                                      │
+│ Mutated Objects:                                                                                                          │
+│  ┌──                                                                                                                      │
+│  │ ObjectID: 0x6f27179467d3db290ef8a8d99737c6a95abae9b7ccf01b14660de02c6a1d62d6                                           │
+│  │ Sender: 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a                                             │
+│  │ Owner: Account Address ( 0x16526f26f4117e2f075960edadd9d744b07390af5451a640319a3ba04f09b79a )                          │
+│  │ ObjectType: 0x2::coin::Coin<0x2::sui::SUI>                                                                             │
+│  │ Version: 435217736                                                                                                     │
+│  │ Digest: 8rfePrR4cgHJQdmJBLMoynbvuw5mosDFxcDjJf2NUsx5                                                                   │
+│  └──                                                                                                                      │
+│ Published Objects:                                                                                                        │
+│  ┌──                                                                                                                      │
+│  │ PackageID: 0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8                                          │
+│  │ Version: 1                                                                                                             │
+│  │ Digest: 7MSNakodPNcgGJY5AiixSnoy62xjEx1LpzZb8gJuumxU                                                                   │
+│  │ Modules: agents, bridge_agents, ghsc, kesc, ngnc, payfrica, pool, send, temporary_card                                 │
+│  └──                                                                                                                      │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+NGNC_POOL ==> 0xd3895c4ccc68daa313db89d94035e931b7c2be550687ad210021e510bc06d98a
+USDC_POOL ==> 0x5c27366867eb430574f6a033954488ae6d4192cfcc61f1bcd0c049745610fcab
+GHSC POOL ==> 0x329cacc979f4a3343dceb1212e233b571a80b7f7268ca4f41672c40fccd42a41
+KESC POOL ==> 0xf402194f30dc27fb5470f979aec68d52174c7af52b7e4fe1e35a6868ea1f11ae
+
+
+
+0.00062
+
+NEXT_PUBLIC_PACKAGE_ID=0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8
+NEXT_PUBLIC_PAYFRICA_AGENT_ID=0x8a801999a070624389c7248a70ecb6eee1128e7de9550962ad27e4010ea0f678
+NEXT_PUBLIC_PUBLISHER=0xa338e3cd0fa775131d7a89138d3b7d53786b6822446f05722ce5fd1ef69e8089
+NEXT_PUBLIC_BRIDGE_PACKAGE_ID=0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8
+NEXT_PUBLIC_BRIDGE_PUBLISHER=0x5ae0332e635d9aeec88c4383717797e7bc0748d191d89339d1affa0a0240e637
+NEXT_PUBLIC_BRIDGE_AGENT_ID=0x111700b4b471539bc7158f30f5325a702f2fc22a537ff2f4e4f8f2aa6ff09030

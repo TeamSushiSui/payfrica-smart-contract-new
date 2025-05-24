@@ -33,7 +33,7 @@ fun init(otw: PAYFRICA,ctx: &mut TxContext){
 
 public fun make_user(payfrica: &mut Payfrica, user_address: address,ctx: &mut TxContext){
     assert!(payfrica.admin.contains(&ctx.sender()), ENotAnAdmin);
-    assert!(payfrica.users.contains(&user_address), ENotAuthorized);
+    assert!(!payfrica.users.contains(&user_address), ENotAuthorized);
     let user = PayfricaUser{
         id: object::new(ctx),
         addr: user_address
